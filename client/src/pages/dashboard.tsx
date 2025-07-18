@@ -14,12 +14,18 @@ import {
   Zap,
   Plus,
   BarChart3,
-  ArrowRight
+  ArrowRight,
+  ExternalLink,
+  Maximize2,
+  MoreHorizontal
 } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('This Month');
   const [searchQuery, setSearchQuery] = useState('');
+  const [notifications, setNotifications] = useState(3);
+  const { toast } = useToast();
 
   // Enhanced metrics with trends
   const metrics = [
@@ -161,27 +167,72 @@ const Dashboard = () => {
     { action: "Print job completed", time: "3 hours ago", type: "print", icon: Activity }
   ];
 
+  // Handler functions for various actions
+  const handleNotificationClick = () => {
+    setNotifications(0);
+    toast({
+      title: "Notifications",
+      description: "You have 3 new notifications",
+    });
+  };
+
+  const handleSettingsClick = () => {
+    toast({
+      title: "Settings",
+      description: "Opening settings panel...",
+    });
+  };
+
+  const handleApplicationClick = (appName: string) => {
+    toast({
+      title: `Opening ${appName}`,
+      description: `Launching ${appName} in a new window...`,
+    });
+  };
+
+  const handleMetricClick = (metricName: string) => {
+    toast({
+      title: `${metricName} Details`,
+      description: `Viewing detailed analytics for ${metricName}...`,
+    });
+  };
+
+  const handleQuickAction = (actionTitle: string) => {
+    toast({
+      title: actionTitle,
+      description: `Executing ${actionTitle}...`,
+    });
+  };
+
+  const handleTimeRangeChange = (newRange: string) => {
+    setSelectedTimeRange(newRange);
+    toast({
+      title: "Time Range Updated",
+      description: `Dashboard updated to show data for ${newRange}`,
+    });
+  };
+
   const quickActions = [
     {
       title: "New Order",
       description: "Create a new custom frame order",
       icon: Plus,
       gradient: "from-blue-500 to-blue-600",
-      action: () => console.log("Navigate to new order form")
+      action: () => handleQuickAction("New Order")
     },
     {
       title: "View Reports",
       description: "Analyze business performance",
       icon: BarChart3,
       gradient: "from-purple-500 to-purple-600",
-      action: () => console.log("Navigate to reports")
+      action: () => handleQuickAction("View Reports")
     },
     {
       title: "Manage Customers",
       description: "Customer database & communication",
       icon: Users,
       gradient: "from-green-500 to-green-600",
-      action: () => console.log("Navigate to customer management")
+      action: () => handleQuickAction("Manage Customers")
     }
   ];
 
@@ -230,18 +281,31 @@ const Dashboard = () => {
               </div>
 
               {/* Notifications */}
-              <button className="relative p-2.5 text-slate-600 hover:text-slate-800 hover:bg-white/50 rounded-xl transition-all duration-200 group">
+              <button 
+                onClick={handleNotificationClick}
+                className="relative p-2.5 text-slate-600 hover:text-slate-800 hover:bg-white/50 rounded-xl transition-all duration-200 group"
+              >
                 <Bell className="w-5 h-5" />
-                <div className="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full border-2 border-white animate-pulse"></div>
+                {notifications > 0 && (
+                  <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 rounded-full border-2 border-white animate-pulse flex items-center justify-center">
+                    <span className="text-xs text-white font-bold">{notifications}</span>
+                  </div>
+                )}
               </button>
 
               {/* Settings */}
-              <button className="p-2.5 text-slate-600 hover:text-slate-800 hover:bg-white/50 rounded-xl transition-all duration-200">
+              <button 
+                onClick={handleSettingsClick}
+                className="p-2.5 text-slate-600 hover:text-slate-800 hover:bg-white/50 rounded-xl transition-all duration-200"
+              >
                 <Settings className="w-5 h-5" />
               </button>
 
               {/* Profile */}
-              <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:shadow-lg transition-all duration-200">
+              <div 
+                onClick={() => handleQuickAction("View Profile")}
+                className="w-8 h-8 bg-gradient-to-r from-blue-500 to-purple-500 rounded-full flex items-center justify-center text-white font-semibold text-sm cursor-pointer hover:shadow-lg transition-all duration-200"
+              >
                 J
               </div>
             </div>
@@ -262,7 +326,7 @@ const Dashboard = () => {
             <label className="text-sm font-medium text-slate-600">Time Range:</label>
             <select 
               value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
+              onChange={(e) => handleTimeRangeChange(e.target.value)}
               className="border border-slate-200 rounded-xl px-4 py-2.5 text-sm font-medium focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white shadow-sm hover:shadow-md transition-all duration-200"
             >
               <option>Today</option>
@@ -278,7 +342,7 @@ const Dashboard = () => {
           {metrics.map((metric, index) => {
             const Icon = metric.icon;
             return (
-              <div key={index} className="gradient-border hover:scale-105 transition-all duration-300 group">
+              <div key={index} className="gradient-border hover:scale-105 transition-all duration-300 group cursor-pointer" onClick={() => handleMetricClick(metric.title)}>
                 <div className="gradient-border-inner p-6 h-full bg-white rounded-2xl">
                   <div className="flex items-center justify-between mb-4">
                     <div className={`p-3 rounded-xl bg-gradient-to-r ${metric.gradient} shadow-lg group-hover:shadow-xl transition-all duration-300`}>
@@ -332,7 +396,7 @@ const Dashboard = () => {
               {/* Applications Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 {filteredApplications.map((app, index) => (
-                  <div key={index} className="group cursor-pointer">
+                  <div key={index} className="group cursor-pointer" onClick={() => handleApplicationClick(app.title)}>
                     <div className="flex flex-col items-center space-y-3">
                       <div className="relative">
                         <div className={`w-16 h-16 bg-gradient-to-r ${app.gradient} rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110 group-hover:rotate-3`}>
@@ -363,28 +427,28 @@ const Dashboard = () => {
               <div className="border-t border-slate-200 pt-6">
                 <h4 className="text-lg font-semibold text-slate-900 mb-4">System Overview</h4>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <div className="group hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl p-4 transition-all duration-200 cursor-pointer">
+                  <div className="group hover:bg-gradient-to-r hover:from-blue-50 hover:to-purple-50 rounded-xl p-4 transition-all duration-200 cursor-pointer" onClick={() => handleQuickAction("View Active Apps")}>
                     <div className="flex items-center justify-center mb-2">
                       <Zap className="w-5 h-5 text-blue-500 mr-2" />
                       <span className="text-2xl font-bold text-slate-900">8</span>
                     </div>
                     <p className="text-xs text-slate-500 text-center font-medium">Apps Active</p>
                   </div>
-                  <div className="group hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl p-4 transition-all duration-200 cursor-pointer">
+                  <div className="group hover:bg-gradient-to-r hover:from-green-50 hover:to-emerald-50 rounded-xl p-4 transition-all duration-200 cursor-pointer" onClick={() => handleQuickAction("View Active Users")}>
                     <div className="flex items-center justify-center mb-2">
                       <Users className="w-5 h-5 text-green-500 mr-2" />
                       <span className="text-2xl font-bold text-slate-900">112</span>
                     </div>
                     <p className="text-xs text-slate-500 text-center font-medium">Active Users</p>
                   </div>
-                  <div className="group hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-xl p-4 transition-all duration-200 cursor-pointer">
+                  <div className="group hover:bg-gradient-to-r hover:from-purple-50 hover:to-indigo-50 rounded-xl p-4 transition-all duration-200 cursor-pointer" onClick={() => handleQuickAction("View Uptime Report")}>
                     <div className="flex items-center justify-center mb-2">
                       <Activity className="w-5 h-5 text-purple-500 mr-2" />
                       <span className="text-2xl font-bold text-slate-900">98.9%</span>
                     </div>
                     <p className="text-xs text-slate-500 text-center font-medium">Uptime</p>
                   </div>
-                  <div className="group hover:bg-gradient-to-r hover:from-orange-50 hover:to-yellow-50 rounded-xl p-4 transition-all duration-200 cursor-pointer">
+                  <div className="group hover:bg-gradient-to-r hover:from-orange-50 hover:to-yellow-50 rounded-xl p-4 transition-all duration-200 cursor-pointer" onClick={() => handleQuickAction("Contact Support")}>
                     <div className="flex items-center justify-center mb-2">
                       <Clock className="w-5 h-5 text-orange-500 mr-2" />
                       <span className="text-2xl font-bold text-slate-900">24/7</span>
@@ -428,7 +492,10 @@ const Dashboard = () => {
               
               {/* View All Activity Button */}
               <div className="mt-6 pt-4 border-t border-slate-200">
-                <button className="w-full py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all duration-200 flex items-center justify-center">
+                <button 
+                  onClick={() => handleQuickAction("View All Activity")}
+                  className="w-full py-2.5 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-xl transition-all duration-200 flex items-center justify-center"
+                >
                   View All Activity
                   <ArrowRight className="w-4 h-4 ml-2" />
                 </button>
