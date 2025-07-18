@@ -42,10 +42,11 @@ The application follows a full-stack monorepo architecture with clear separation
 - **Responsive Design**: Mobile-first approach with Tailwind breakpoints
 
 ### Backend Components
-- **API Routes**: RESTful API endpoints with Express
-- **Database Layer**: Drizzle ORM with PostgreSQL schema definitions
-- **Storage Interface**: Abstracted storage layer with memory and database implementations
+- **API Routes**: RESTful API endpoints with Express for dashboard data, applications, metrics, activities, customers, and orders
+- **Database Layer**: Drizzle ORM with PostgreSQL schema definitions including comprehensive business entities
+- **Storage Interface**: DatabaseStorage implementation with full CRUD operations for all business entities
 - **Middleware**: Request logging, error handling, and development tooling
+- **Database Schema**: Complete business schema with users, customers, orders, applications, business metrics, and activities
 
 ### Shared Components
 - **Schema Definitions**: Zod-validated database schemas shared between client and server
@@ -67,9 +68,11 @@ The application follows a full-stack monorepo architecture with clear separation
 ## External Dependencies
 
 ### Database
-- **Neon Database**: Serverless PostgreSQL for production
-- **Drizzle Kit**: Database migrations and schema management
-- **Connection**: Uses DATABASE_URL environment variable
+- **PostgreSQL**: Production-grade relational database with comprehensive business schema
+- **Neon Database**: Serverless PostgreSQL provider for scalable hosting
+- **Drizzle ORM**: Type-safe database interactions with automatic migrations
+- **Database Schema**: Complete business entities including users, customers, orders, applications, business metrics, and activities with proper relationships
+- **Connection**: Uses DATABASE_URL environment variable with connection pooling
 
 ### UI/UX Libraries
 - **Radix UI**: Primitive components for accessibility and behavior
