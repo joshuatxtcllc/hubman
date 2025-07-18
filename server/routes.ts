@@ -2,6 +2,7 @@ import type { Express } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertCustomerSchema, insertOrderSchema, insertApplicationSchema, insertBusinessMetricSchema, insertActivitySchema } from "@shared/schema";
+import { getAllApplicationStatuses } from "./status";
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard data endpoints
@@ -12,7 +13,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
         storage.getBusinessMetrics(),
         storage.getActivities(6)
       ]);
-      
+
       res.json({
         applications: applications.slice(0, 8),
         metrics: metrics.slice(0, 4),
@@ -25,11 +26,17 @@ export async function registerRoutes(app: Express): Promise<Server> {
 
   // Applications endpoints
   app.get("/api/applications", async (req, res) => {
+    const allApplications = await storage.getApplications();
+    res.json(allApplications);
+  });
+
+  // Get application status
+  app.get("/api/applications/status", async (req, res) => {
     try {
-      const applications = await storage.getApplications();
-      res.json(applications);
+      const statuses = await getAllApplicationStatuses();
+      res.json(statuses);
     } catch (error) {
-      res.status(500).json({ error: "Failed to fetch applications" });
+      res.status(500).json({ error: "Failed to fetch application statuses" });
     }
   });
 

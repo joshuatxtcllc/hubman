@@ -407,7 +407,7 @@ const Dashboard = () => {
                 <span className="font-medium">Real-time status</span>
               </div>
             </div>
-            
+
             <div className="glass-card rounded-2xl p-8 shadow-xl border border-white/30">
               {/* Applications Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
@@ -443,7 +443,7 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* System Overview */}
               <div className="border-t border-slate-200 pt-6">
                 <h4 className="text-lg font-semibold text-slate-900 mb-4">System Overview</h4>
@@ -510,7 +510,7 @@ const Dashboard = () => {
                   );
                 })}
               </div>
-              
+
               {/* View All Activity Button */}
               <div className="mt-6 pt-4 border-t border-slate-200">
                 <button 

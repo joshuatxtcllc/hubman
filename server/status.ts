@@ -1,0 +1,58 @@
+
+export interface ApplicationStatus {
+  id: number;
+  name: string;
+  url: string;
+  status: 'Active' | 'Down' | 'Maintenance';
+  responseTime: number;
+  lastChecked: Date;
+}
+
+const applications = [
+  { id: 1, name: "Frame Assistant", url: "https://jays-frames-assistant-JayFrames.replit.app" },
+  { id: 2, name: "Virtual Designer", url: "https://jays-frames-ai-JayFrames.replit.app" },
+  { id: 3, name: "Kanban Production", url: "https://kanbanmain-JayFrames.replit.app" },
+  { id: 4, name: "Enterprise CRM", url: "https://enterprise-intelligence-JayFrames.replit.app" },
+  { id: 5, name: "POS System", url: "https://therealposmain-JayFrames.replit.app" },
+  { id: 6, name: "Business Listing Analyzer", url: "https://business-listing-analyzer-JayFrames.replit.app" }
+];
+
+export async function checkApplicationStatus(url: string): Promise<{ status: string; responseTime: number }> {
+  const startTime = Date.now();
+  
+  try {
+    const response = await fetch(url, { 
+      method: 'HEAD',
+      timeout: 10000 // 10 second timeout
+    });
+    
+    const responseTime = Date.now() - startTime;
+    
+    return {
+      status: response.ok ? 'Active' : 'Down',
+      responseTime
+    };
+  } catch (error) {
+    return {
+      status: 'Down',
+      responseTime: Date.now() - startTime
+    };
+  }
+}
+
+export async function getAllApplicationStatuses(): Promise<ApplicationStatus[]> {
+  const statusPromises = applications.map(async (app) => {
+    const { status, responseTime } = await checkApplicationStatus(app.url);
+    
+    return {
+      id: app.id,
+      name: app.name,
+      url: app.url,
+      status: status as 'Active' | 'Down' | 'Maintenance',
+      responseTime,
+      lastChecked: new Date()
+    };
+  });
+  
+  return Promise.all(statusPromises);
+}
