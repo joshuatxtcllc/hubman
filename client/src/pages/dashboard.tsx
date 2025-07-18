@@ -84,77 +84,85 @@ const Dashboard = () => {
       uptime: "99.9%",
       icon: "🏪",
       gradient: "from-blue-500 to-blue-600",
-      priority: "high"
+      priority: "high",
+      url: "https://therealposmain-JayFrames.replit.app"
     },
     {
       title: "Frame Designer",
       subtitle: "Virtual Design Tool",
-      status: "Beta",
+      status: "Online",
       users: 23,
       uptime: "98.2%",
       icon: "🎨",
       gradient: "from-green-500 to-green-600",
-      priority: "high"
+      priority: "high",
+      url: "https://jays-frames-ai-JayFrames.replit.app"
     },
     {
       title: "AI Assistant",
       subtitle: "Smart Recommendations",
-      status: "Beta",
+      status: "Online",
       users: 12,
       uptime: "97.8%",
       icon: "🤖",
       gradient: "from-purple-500 to-purple-600",
-      priority: "medium"
+      priority: "high",
+      url: "https://jays-frames-assistant-JayFrames.replit.app"
     },
     {
-      title: "Notifications",
-      subtitle: "System Alerts",
+      title: "CRM",
+      subtitle: "Enterprise Intelligence",
+      status: "Online",
+      users: 18,
+      uptime: "99.5%",
+      icon: "👥",
+      gradient: "from-yellow-500 to-yellow-600",
+      priority: "high",
+      url: "https://enterprise-intelligence-JayFrames.replit.app"
+    },
+    {
+      title: "Kanban Board",
+      subtitle: "Production Management",
+      status: "Online",
+      users: 15,
+      uptime: "99.2%",
+      icon: "📋",
+      gradient: "from-indigo-500 to-indigo-600",
+      priority: "high",
+      url: "https://kanbanmain-JayFrames.replit.app"
+    },
+    {
+      title: "SEO Analyzer",
+      subtitle: "Business Listing Analysis",
       status: "Online",
       users: 8,
-      uptime: "100%",
-      icon: "🔔",
-      gradient: "from-yellow-500 to-yellow-600",
-      priority: "medium"
+      uptime: "98.8%",
+      icon: "🔍",
+      gradient: "from-pink-500 to-pink-600",
+      priority: "medium",
+      url: "https://business-listing-analyzer-JayFrames.replit.app"
     },
     {
       title: "Analytics",
       subtitle: "Business Intelligence",
-      status: "Online",
-      users: 5,
-      uptime: "99.5%",
-      icon: "📊",
-      gradient: "from-indigo-500 to-indigo-600",
-      priority: "high"
-    },
-    {
-      title: "Print Queue",
-      subtitle: "Art Production",
       status: "Beta",
-      users: 2,
-      uptime: "96.1%",
-      icon: "🖨️",
-      gradient: "from-pink-500 to-pink-600",
-      priority: "low"
+      users: 5,
+      uptime: "97.5%",
+      icon: "📊",
+      gradient: "from-teal-500 to-teal-600",
+      priority: "medium",
+      url: "#"
     },
     {
-      title: "QR Codes",
-      subtitle: "Product Tracking",
+      title: "Reports",
+      subtitle: "Data Export & Insights",
       status: "Beta",
       users: 3,
-      uptime: "98.7%",
-      icon: "📱",
-      gradient: "from-teal-500 to-teal-600",
-      priority: "low"
-    },
-    {
-      title: "Locations",
-      subtitle: "Asset Tracking",
-      status: "Beta",
-      users: 12,
-      uptime: "99.1%",
-      icon: "📍",
+      uptime: "96.1%",
+      icon: "📈",
       gradient: "from-red-500 to-red-600",
-      priority: "medium"
+      priority: "low",
+      url: "#"
     }
   ];
 
@@ -183,11 +191,19 @@ const Dashboard = () => {
     });
   };
 
-  const handleApplicationClick = (appName: string) => {
-    toast({
-      title: `Opening ${appName}`,
-      description: `Launching ${appName} in a new window...`,
-    });
+  const handleApplicationClick = (appName: string, url: string) => {
+    if (url && url !== "#") {
+      window.open(url, '_blank');
+      toast({
+        title: `Opening ${appName}`,
+        description: `Launching ${appName} in a new tab...`,
+      });
+    } else {
+      toast({
+        title: `${appName} Coming Soon`,
+        description: `${appName} is currently in development.`,
+      });
+    }
   };
 
   const handleMetricClick = (metricName: string) => {
@@ -396,7 +412,7 @@ const Dashboard = () => {
               {/* Applications Grid */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-8">
                 {filteredApplications.map((app, index) => (
-                  <div key={index} className="group cursor-pointer" onClick={() => handleApplicationClick(app.title)}>
+                  <div key={index} className="group cursor-pointer" onClick={() => handleApplicationClick(app.title, app.url)}>
                     <div className="flex flex-col items-center space-y-3">
                       <div className="relative">
                         <div className={`w-16 h-16 bg-gradient-to-r ${app.gradient} rounded-2xl flex items-center justify-center text-2xl shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110 group-hover:rotate-3`}>
@@ -405,6 +421,11 @@ const Dashboard = () => {
                         <div className={`absolute -top-1 -right-1 w-3 h-3 rounded-full border-2 border-white ${
                           app.status === 'Online' ? 'bg-green-500 animate-pulse' : 'bg-yellow-500'
                         }`}></div>
+                        {app.url && app.url !== "#" && (
+                          <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-blue-500 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                            <ExternalLink className="w-2 h-2 text-white" />
+                          </div>
+                        )}
                       </div>
                       <div className="text-center">
                         <h4 className="font-semibold text-slate-900 text-sm mb-1 group-hover:text-blue-600 transition-colors">
