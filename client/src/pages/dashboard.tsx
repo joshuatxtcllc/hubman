@@ -25,54 +25,113 @@ const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('This Month');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(3);
+  const [dashboardData, setDashboardData] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
-  // Enhanced metrics with trends - memoized to prevent re-renders
-  const metrics = useMemo(() => [
+  // Fetch live dashboard data
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
+        const response = await fetch('/api/dashboard/overview');
+        if (!response.ok) {
+          throw new Error('Failed to fetch dashboard data');
+        }
+        const data = await response.json();
+        setDashboardData(data);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+        toast({
+          title: "Connection Error",
+          description: "Unable to fetch live data. Using cached metrics.",
+          variant: "destructive"
+        });
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+
+    // Refresh data every 30 seconds
+    const interval = setInterval(fetchDashboardData, 30000);
+    return () => clearInterval(interval);
+  }, [toast]);
+
+  // Enhanced metrics with trends - now using live data
+  const metrics = useMemo(() => {
+    if (!dashboardData?.metrics) {
+      // Fallback data while loading
+      return [
     {
-      title: "Monthly Revenue",
-      value: "$24,580",
-      change: "+12%",
-      trend: "up",
-      icon: DollarSign,
-      gradient: "from-blue-500 to-blue-600",
-      comparison: "vs last month",
-      target: "$25,000",
-      progress: 98
-    },
-    {
-      title: "Active Orders",
-      value: "347",
-      change: "+8%",
-      trend: "up",
-      icon: ShoppingCart,
-      gradient: "from-green-500 to-green-600",
-      comparison: "vs last week",
-      target: "350",
-      progress: 99
-    },
-    {
-      title: "Pending Tasks",
-      value: "24",
-      change: "-12",
-      trend: "down",
-      icon: CheckSquare,
-      gradient: "from-purple-500 to-purple-600",
-      comparison: "from yesterday",
-      target: "< 20",
-      progress: 80
-    },
-    {
-      title: "Total Customers",
-      value: "1,248",
-      change: "+24%",
-      trend: "up",
-      icon: Users,
-      gradient: "from-orange-500 to-orange-600",
-      comparison: "vs last quarter",
-      target: "1,300",
-      progress: 96
+          title: "Monthly Revenue",
+          value: "$24,580",
+          change: "+12%",
+          trend: "up",
+          icon: DollarSign,
+          gradient: "from-blue-500 to-blue-600",
+          comparison: "vs last month",
+          target: "$25,000",
+          progress: 98
+        },
+        {
+          title: "Active Orders",
+          value: "347",
+          change: "+8%",
+          trend: "up",
+          icon: ShoppingCart,
+          gradient: "from-green-500 to-green-600",
+          comparison: "vs last week",
+          target: "350",
+          progress: 99
+        },
+        {
+          title: "Pending Tasks",
+          value: "24",
+          change: "-12",
+          trend: "down",
+          icon: CheckSquare,
+          gradient: "from-purple-500 to-purple-600",
+          comparison: "from yesterday",
+          target: "< 20",
+          progress: 80
+        },
+        {
+          title: "Total Customers",
+          value: "1,248",
+          change: "+24%",
+          trend: "up",
+          icon: Users,
+          gradient: "from-orange-500 to-orange-600",
+          comparison: "vs last quarter",
+          target: "1,300",
+          progress: 96
+        }
+      ];
     }
+
+    // Map live data to metrics format
+    return dashboardData.metrics.map((metric: any) => ({
+      title: metric.name,
+      value: metric.value,
+      change: metric.change,
+      trend: metric.change.includes('+') ? 'up' : 'down',
+      icon: metric.name.includes('Revenue') ? DollarSign : 
+            metric.name.includes('Orders') ? ShoppingCart : 
+            metric.name.includes('Tasks') || metric.name.includes('Pending') ? CheckSquare :
+            metric.name.includes('Productivity') ? TrendingUp : Users,
+      gradient: metric.name.includes('Revenue') ? "from-blue-500 to-blue-600" :
+               metric.name.includes('Orders') ? "from-green-500 to-green-600" :
+               metric.name.includes('Tasks') || metric.name.includes('Pending') ? "from-purple-500 to-purple-600" :
+               metric.name.includes('Productivity') ? "from-indigo-500 to-indigo-600" : "from-orange-500 to-orange-600",
+      comparison: metric.name.includes('Revenue') ? "vs last month" : 
+                 metric.name.includes('Orders') ? "vs last week" :
+                 metric.name.includes('Tasks') ? "from Kanban" :
+                 metric.name.includes('Productivity') ? "team efficiency" : "vs last quarter",
+      target: metric.target || "N/A",
+      progress: metric.progress || 50
+    }))
   ], []);
 
   const applications = useMemo(() => [
@@ -166,14 +225,29 @@ const Dashboard = () => {
     }
   ], []);
 
-  const recentActivity = useMemo(() => [
-    { action: "New order #1247 received", time: "2 min ago", type: "order", icon: ShoppingCart },
-    { action: "Frame design completed", time: "15 min ago", type: "design", icon: CheckSquare },
-    { action: "Payment processed ($450)", time: "32 min ago", type: "payment", icon: DollarSign },
-    { action: "Inventory updated", time: "1 hour ago", type: "inventory", icon: Activity },
-    { action: "New customer registered", time: "2 hours ago", type: "customer", icon: Users },
-    { action: "Print job completed", time: "3 hours ago", type: "print", icon: Activity }
-  ], []);
+  const recentActivity = useMemo(() => {
+    if (!dashboardData?.activities) {
+      return [
+        { action: "Loading live activity...", time: "now", type: "system", icon: Activity },
+        { action: "Connecting to Kanban app...", time: "now", type: "system", icon: Activity }
+      ];
+    }
+
+    return dashboardData.activities.map((activity: any) => ({
+      action: activity.action,
+      time: activity.createdAt ? new Date(activity.createdAt).toLocaleString('en-US', { 
+        hour: 'numeric', 
+        minute: 'numeric',
+        hour12: true 
+      }) + ' ago' : activity.time,
+      type: activity.type,
+      icon: activity.type === 'order' ? ShoppingCart :
+            activity.type === 'task' ? CheckSquare :
+            activity.type === 'payment' ? DollarSign :
+            activity.type === 'customer' ? Users :
+            Activity
+    }));
+  }, [dashboardData]);
 
   // Handler functions for various actions - optimized with useCallback
   const handleNotificationClick = useCallback(() => {
@@ -278,9 +352,33 @@ const Dashboard = () => {
                 </div>
               </div>
               {/* System Status */}
-              <div className="hidden lg:flex items-center space-x-2 px-3 py-1.5 bg-green-50 rounded-full border border-green-200">
-                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-                <span className="text-sm font-medium text-green-700">All Systems Operational</span>
+              <div className={`hidden lg:flex items-center space-x-2 px-3 py-1.5 rounded-full border ${
+                isLoading 
+                  ? 'bg-yellow-50 border-yellow-200' 
+                  : dashboardData 
+                    ? 'bg-green-50 border-green-200' 
+                    : 'bg-red-50 border-red-200'
+              }`}>
+                <div className={`w-2 h-2 rounded-full ${
+                  isLoading 
+                    ? 'bg-yellow-500 animate-spin' 
+                    : dashboardData 
+                      ? 'bg-green-500 animate-pulse' 
+                      : 'bg-red-500'
+                }`}></div>
+                <span className={`text-sm font-medium ${
+                  isLoading 
+                    ? 'text-yellow-700' 
+                    : dashboardData 
+                      ? 'text-green-700' 
+                      : 'text-red-700'
+                }`}>
+                  {isLoading 
+                    ? 'Loading Live Data...' 
+                    : dashboardData 
+                      ? 'Live Data Connected' 
+                      : 'Connection Error'}
+                </span>
               </div>
             </div>
 
