@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { 
   DollarSign, 
   ShoppingCart, 
@@ -27,8 +27,8 @@ const Dashboard = () => {
   const [notifications, setNotifications] = useState(3);
   const { toast } = useToast();
 
-  // Enhanced metrics with trends
-  const metrics = [
+  // Enhanced metrics with trends - memoized to prevent re-renders
+  const metrics = useMemo(() => [
     {
       title: "Monthly Revenue",
       value: "$24,580",
@@ -73,9 +73,9 @@ const Dashboard = () => {
       target: "1,300",
       progress: 96
     }
-  ];
+  ], []);
 
-  const applications = [
+  const applications = useMemo(() => [
     {
       title: "POS System",
       subtitle: "Sales & Inventory",
@@ -164,34 +164,34 @@ const Dashboard = () => {
       priority: "low",
       url: "#"
     }
-  ];
+  ], []);
 
-  const recentActivity = [
+  const recentActivity = useMemo(() => [
     { action: "New order #1247 received", time: "2 min ago", type: "order", icon: ShoppingCart },
     { action: "Frame design completed", time: "15 min ago", type: "design", icon: CheckSquare },
     { action: "Payment processed ($450)", time: "32 min ago", type: "payment", icon: DollarSign },
     { action: "Inventory updated", time: "1 hour ago", type: "inventory", icon: Activity },
     { action: "New customer registered", time: "2 hours ago", type: "customer", icon: Users },
     { action: "Print job completed", time: "3 hours ago", type: "print", icon: Activity }
-  ];
+  ], []);
 
-  // Handler functions for various actions
-  const handleNotificationClick = () => {
+  // Handler functions for various actions - optimized with useCallback
+  const handleNotificationClick = useCallback(() => {
     setNotifications(0);
     toast({
       title: "Notifications",
       description: "You have 3 new notifications",
     });
-  };
+  }, [toast]);
 
-  const handleSettingsClick = () => {
+  const handleSettingsClick = useCallback(() => {
     toast({
       title: "Settings",
       description: "Opening settings panel...",
     });
-  };
+  }, [toast]);
 
-  const handleApplicationClick = (appName: string, url: string) => {
+  const handleApplicationClick = useCallback((appName: string, url: string) => {
     if (url && url !== "#") {
       window.open(url, '_blank');
       toast({
@@ -204,31 +204,31 @@ const Dashboard = () => {
         description: `${appName} is currently in development.`,
       });
     }
-  };
+  }, [toast]);
 
-  const handleMetricClick = (metricName: string) => {
+  const handleMetricClick = useCallback((metricName: string) => {
     toast({
       title: `${metricName} Details`,
       description: `Viewing detailed analytics for ${metricName}...`,
     });
-  };
+  }, [toast]);
 
-  const handleQuickAction = (actionTitle: string) => {
+  const handleQuickAction = useCallback((actionTitle: string) => {
     toast({
       title: actionTitle,
       description: `Executing ${actionTitle}...`,
     });
-  };
+  }, [toast]);
 
-  const handleTimeRangeChange = (newRange: string) => {
+  const handleTimeRangeChange = useCallback((newRange: string) => {
     setSelectedTimeRange(newRange);
     toast({
       title: "Time Range Updated",
       description: `Dashboard updated to show data for ${newRange}`,
     });
-  };
+  }, [toast]);
 
-  const quickActions = [
+  const quickActions = useMemo(() => [
     {
       title: "New Order",
       description: "Create a new custom frame order",
@@ -250,11 +250,13 @@ const Dashboard = () => {
       gradient: "from-green-500 to-green-600",
       action: () => handleQuickAction("Manage Customers")
     }
-  ];
+  ], [handleQuickAction]);
 
-  const filteredApplications = applications.filter(app => 
-    app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    app.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredApplications = useMemo(() => 
+    applications.filter(app => 
+      app.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      app.subtitle.toLowerCase().includes(searchQuery.toLowerCase())
+    ), [applications, searchQuery]
   );
 
   return (
