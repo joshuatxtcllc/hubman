@@ -131,8 +131,8 @@ const Dashboard = () => {
                  metric.name.includes('Productivity') ? "team efficiency" : "vs last quarter",
       target: metric.target || "N/A",
       progress: metric.progress || 50
-    }))
-  ], []);
+    }));
+  }, [dashboardData]);
 
   const applications = useMemo(() => [
     {
