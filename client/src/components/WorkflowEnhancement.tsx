@@ -458,7 +458,7 @@ This email was sent from the Jay's Frames Command Center`;
       {/* Workflow Automation Tips */}
       <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg border border-purple-200 p-6">
         <h3 className="text-lg font-semibold mb-4 text-purple-900">Workflow Automation Tips</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">🗂️ Google Drive Integration</h4>
             <p className="text-sm text-purple-700 mb-2">Direct link to your invoices folder:</p>
@@ -499,6 +499,22 @@ This email was sent from the Jay's Frames Command Center`;
             </ul>
             <p className="text-xs text-purple-600 mt-2">
               <strong>Note:</strong> You'll need to manually attach the invoice PDF from your downloads.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-purple-100">
+            <h4 className="font-medium text-purple-900 mb-2">🎯 Professional Design</h4>
+            <p className="text-sm text-purple-700 mb-2">Larson Juhl Designer Tool:</p>
+            <a 
+              href="https://shop.larsonjuhl.com/en-US/lj-design-studio?customizable=#maincontent" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Open Professional Frame Designer
+            </a>
+            <p className="text-xs text-purple-600 mt-2">
+              <strong>Use for:</strong> Advanced frame designs, premium materials, professional mockups and customer presentations.
             </p>
           </div>
         </div>

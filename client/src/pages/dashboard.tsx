@@ -226,6 +226,17 @@ const Dashboard = () => {
       gradient: "from-red-500 to-red-600",
       priority: "low",
       url: "#"
+    },
+    {
+      title: "Larson Juhl Designer",
+      subtitle: "Professional Frame Design Studio",
+      status: "Online",
+      users: 12,
+      uptime: "99.8%",
+      icon: "🎯",
+      gradient: "from-emerald-500 to-emerald-600",
+      priority: "high",
+      url: "https://shop.larsonjuhl.com/en-US/lj-design-studio?customizable=#maincontent"
     }
   ], []);
 

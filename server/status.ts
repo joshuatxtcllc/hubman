@@ -14,7 +14,8 @@ const applications = [
   { id: 3, name: "Kanban Production", url: "https://kanbanmain-JayFrames.replit.app" },
   { id: 4, name: "Enterprise CRM", url: "https://enterprise-intelligence-JayFrames.replit.app" },
   { id: 5, name: "POS System", url: "https://therealposmain-JayFrames.replit.app" },
-  { id: 6, name: "Business Listing Analyzer", url: "https://business-listing-analyzer-JayFrames.replit.app" }
+  { id: 6, name: "Business Listing Analyzer", url: "https://business-listing-analyzer-JayFrames.replit.app" },
+  { id: 7, name: "Larson Juhl Designer", url: "https://shop.larsonjuhl.com/en-US/lj-design-studio?customizable=#maincontent" }
 ];
 
 export async function checkApplicationStatus(url: string): Promise<{ status: string; responseTime: number }> {
