@@ -19,10 +19,12 @@ import {
   Maximize2,
   MoreHorizontal,
   Workflow,
-  Home
+  Home,
+  Package
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import WorkflowEnhancement from '@/components/WorkflowEnhancement';
+import WholesaleResources from '@/components/WholesaleResources';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -492,6 +494,17 @@ const Dashboard = () => {
             <Workflow className="w-5 h-5" />
             <span>Workflow Intelligence</span>
           </button>
+          <button
+            onClick={() => setActiveTab('wholesale')}
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === 'wholesale'
+                ? 'bg-gradient-to-r from-green-600 to-green-700 text-white shadow-lg'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Package className="w-5 h-5" />
+            <span>Wholesale Resources</span>
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -699,6 +712,11 @@ const Dashboard = () => {
         {/* Workflow Intelligence Tab */}
         {activeTab === 'workflow' && (
           <WorkflowEnhancement />
+        )}
+
+        {/* Wholesale Resources Tab */}
+        {activeTab === 'wholesale' && (
+          <WholesaleResources />
         )}
       </main>
     </div>
