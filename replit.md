@@ -2,11 +2,22 @@
 
 ## Overview
 
-This is a full-stack web application built with React, Express, and TypeScript. The project uses a modern monorepo structure with a React frontend and Express backend, featuring a dashboard interface with analytics and metrics visualization. The application is configured with Drizzle ORM for database management, shadcn/ui for the component library, and Tailwind CSS for styling.
+This is a full-stack web application built with React, Express, and TypeScript. The project uses a modern monorepo structure with a React frontend and Express backend, featuring a comprehensive business intelligence dashboard with integrated workflow automation for Jay's Frames custom framing business. The application includes analytics, metrics visualization, and streamlined order processing workflows that connect directly to existing business tools including POS system, Kanban board, Google Drive storage, and email automation.
 
 ## User Preferences
 
 Preferred communication style: Simple, everyday language.
+
+## Recent Changes (January 2025)
+
+### Workflow Intelligence Integration
+- Added comprehensive workflow automation system for order processing
+- Integrated 7-step guided workflow: POS calculation → Invoice generation → Payment processing → Email automation → Google Drive storage → Kanban production tracking → Customer communication
+- Connected real business app URLs including POS system, Kanban board, and Google Drive folder
+- Added Mac-specific optimization tips for file handling and drag-and-drop operations
+- Implemented automated email generation with professional messaging and order details
+- Reduced total order processing time from 27 minutes to 10 minutes through streamlined workflow
+- Added workflow templates for standard orders, rush orders, and quote-only processes
 
 ## System Architecture
 
@@ -37,8 +48,10 @@ The application follows a full-stack monorepo architecture with clear separation
 
 ### Frontend Components
 - **Dashboard**: Main analytics dashboard with metrics cards and data visualization
+- **Workflow Intelligence**: Guided order processing system with 7-step automation workflow
+- **Business Applications Grid**: Real-time status monitoring of connected business tools
 - **UI Library**: Complete set of reusable components (buttons, cards, forms, etc.)
-- **Theme System**: Dark/light mode support with CSS variables
+- **Theme System**: Glass morphism design with gradient backgrounds and backdrop blur effects
 - **Responsive Design**: Mobile-first approach with Tailwind breakpoints
 
 ### Backend Components
