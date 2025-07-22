@@ -115,15 +115,15 @@ const WorkflowEnhancement = () => {
     },
     {
       id: 5,
-      title: "Save Records",
-      description: "Store invoice PDF and order details",
+      title: "Save to Drive",
+      description: "Auto-upload invoice to Google Drive folder",
       icon: <Download className="w-5 h-5" />,
-      appName: "File Storage",
-      url: "https://drive.google.com",
-      action: "Save invoice PDF with proper naming convention",
+      appName: "Google Drive",
+      url: "https://drive.google.com/drive/folders/1hG5k3uB0Q1LIt60EWSG2A-mqbsoc_RuE",
+      action: "Upload invoice PDF directly to Jay's Frames invoices folder",
       dataNeeded: ["Invoice PDF", "Order number"],
-      dataProvided: ["Stored invoice", "File reference"],
-      estimatedTime: "1 min"
+      dataProvided: ["Stored invoice", "Drive link"],
+      estimatedTime: "30 sec"
     },
     {
       id: 6,
@@ -136,6 +136,18 @@ const WorkflowEnhancement = () => {
       dataNeeded: ["Complete order data", "Materials list", "Timeline"],
       dataProvided: ["Production card", "Status tracking"],
       estimatedTime: "2 min"
+    },
+    {
+      id: 7,
+      title: "Email with Invoice",
+      description: "Send automated email with invoice attachment",
+      icon: <Mail className="w-5 h-5" />,
+      appName: "Email Automation",
+      url: "mailto:",
+      action: "Send professional email with invoice PDF automatically attached",
+      dataNeeded: ["Customer email", "Invoice PDF from Drive"],
+      dataProvided: ["Email sent", "Delivery confirmation"],
+      estimatedTime: "30 sec"
     }
   ];
 
@@ -145,24 +157,24 @@ const WorkflowEnhancement = () => {
       name: 'Standard Order',
       description: 'Complete order processing from quote to production',
       steps: workflowSteps,
-      estimatedTime: '13 min',
-      automation: 'Manual with guided workflow'
+      estimatedTime: '10 min',
+      automation: 'Streamlined with direct Drive access and auto-email'
     },
     {
       id: 'rush',
       name: 'Rush Order',
       description: 'Expedited processing for urgent orders',
-      steps: workflowSteps.filter(s => [1, 2, 3, 6].includes(s.id)),
-      estimatedTime: '8 min',
-      automation: 'Skip file storage step'
+      steps: workflowSteps.filter(s => [1, 2, 3, 6, 7].includes(s.id)),
+      estimatedTime: '6 min',
+      automation: 'Skip file storage, direct to production'
     },
     {
       id: 'quote',
       name: 'Quote Only',
       description: 'Generate quote without processing payment',
-      steps: workflowSteps.filter(s => [1, 2, 4].includes(s.id)),
-      estimatedTime: '5 min',
-      automation: 'Skip payment and production steps'
+      steps: workflowSteps.filter(s => [1, 2, 7].includes(s.id)),
+      estimatedTime: '4 min',
+      automation: 'Quote and email only'
     }
   ];
 
@@ -216,7 +228,36 @@ const WorkflowEnhancement = () => {
   };
 
   const openApp = (url: string, stepId: number) => {
-    window.open(url, '_blank');
+    // Special handling for email with invoice
+    if (stepId === 7) {
+      const customerEmail = prompt("Enter customer email:");
+      if (customerEmail) {
+        const subject = `Invoice from Jay's Frames - Order ${orderData.id}`;
+        const body = `Dear Customer,
+
+Thank you for choosing Jay's Frames! Please find your invoice attached.
+
+Your custom frame order details:
+- Order ID: ${orderData.id}
+- Date: ${new Date().toLocaleDateString()}
+
+To make payment, please use the payment link provided or contact us at your convenience.
+
+We'll begin production once payment is received and will keep you updated on progress.
+
+Best regards,
+Jay's Frames Team
+
+---
+This email was sent from the Jay's Frames Command Center`;
+        
+        const mailtoLink = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+        window.open(mailtoLink);
+      }
+    } else {
+      window.open(url, '_blank');
+    }
+    
     // Mark step as active but don't auto-complete
     const currentSteps = orderData.steps || workflowSteps;
     const stepIndex = currentSteps.findIndex(s => s.id === stepId);
@@ -326,6 +367,21 @@ const WorkflowEnhancement = () => {
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <h4 className="font-medium text-blue-900 mb-2">Action Required:</h4>
                   <p className="text-sm text-blue-700">{getCurrentStep()?.action}</p>
+                  {getCurrentStep()?.id === 5 && (
+                    <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                      <strong>Mac Tip:</strong> After downloading PDF, drag directly to the opened Drive folder to avoid local saving step.
+                    </div>
+                  )}
+                  {getCurrentStep()?.id === 6 && (
+                    <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                      <strong>Kanban Tips:</strong> Click "New Card" → Add customer name in title → Copy frame specs from POS to description
+                    </div>
+                  )}
+                  {getCurrentStep()?.id === 7 && (
+                    <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                      <strong>Email Automation:</strong> Email will auto-populate with professional invoice message and customer details
+                    </div>
+                  )}
                 </div>
                 <div className="bg-yellow-50 p-4 rounded-xl border border-yellow-100">
                   <h4 className="font-medium text-yellow-900 mb-2">You'll need:</h4>
@@ -399,10 +455,59 @@ const WorkflowEnhancement = () => {
         </div>
       </div>
 
+      {/* Workflow Automation Tips */}
+      <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl shadow-lg border border-purple-200 p-6">
+        <h3 className="text-lg font-semibold mb-4 text-purple-900">Workflow Automation Tips</h3>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="bg-white rounded-xl p-4 border border-purple-100">
+            <h4 className="font-medium text-purple-900 mb-2">🗂️ Google Drive Integration</h4>
+            <p className="text-sm text-purple-700 mb-2">Direct link to your invoices folder:</p>
+            <a 
+              href="https://drive.google.com/drive/folders/1hG5k3uB0Q1LIt60EWSG2A-mqbsoc_RuE" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-xs text-blue-600 hover:text-blue-800 underline"
+            >
+              Open Jay's Frames Invoices Folder
+            </a>
+            <p className="text-xs text-purple-600 mt-2">
+              <strong>Mac Tip:</strong> Keep this folder open in a browser tab during workflow for direct drag-and-drop.
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-purple-100">
+            <h4 className="font-medium text-purple-900 mb-2">📋 Kanban Integration</h4>
+            <p className="text-sm text-purple-700 mb-2">Production tracking steps:</p>
+            <ol className="text-xs text-purple-600 space-y-1">
+              <li>1. Open Kanban app</li>
+              <li>2. Click "Add Card" in "To Do"</li>
+              <li>3. Title: Customer Name + Frame Size</li>
+              <li>4. Description: Copy specs from POS</li>
+              <li>5. Set due date and priority</li>
+            </ol>
+          </div>
+          
+          <div className="bg-white rounded-xl p-4 border border-purple-100">
+            <h4 className="font-medium text-purple-900 mb-2">📧 Email Automation</h4>
+            <p className="text-sm text-purple-700 mb-2">Auto-generated email includes:</p>
+            <ul className="text-xs text-purple-600 space-y-1">
+              <li>• Professional greeting</li>
+              <li>• Order details and ID</li>
+              <li>• Payment instructions</li>
+              <li>• Production timeline</li>
+              <li>• Contact information</li>
+            </ul>
+            <p className="text-xs text-purple-600 mt-2">
+              <strong>Note:</strong> You'll need to manually attach the invoice PDF from your downloads.
+            </p>
+          </div>
+        </div>
+      </div>
+
       {/* Quick Access Tool Grid */}
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl shadow-lg border border-white/20 p-6">
         <h3 className="text-lg font-semibold mb-4">Quick Access Tools</h3>
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-4">
           {workflowSteps.map((step) => (
             <div key={step.id} className="text-center">
               <button
