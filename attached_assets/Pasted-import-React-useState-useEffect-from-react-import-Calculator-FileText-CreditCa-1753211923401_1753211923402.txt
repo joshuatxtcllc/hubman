@@ -1,0 +1,312 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  Calculator, 
+  FileText, 
+  CreditCard, 
+  Mail, 
+  Download, 
+  Clipboard, 
+  CheckCircle, 
+  Clock, 
+  ArrowRight, 
+  ExternalLink,
+  User,
+  DollarSign,
+  Package,
+  Bell,
+  Play,
+  Pause,
+  RotateCcw,
+  AlertCircle
+} from 'lucide-react';
+
+const WorkflowEnhancement = () => {
+  const [activeWorkflow, setActiveWorkflow] = useState(null);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [orderData, setOrderData] = useState({});
+  const [workflowHistory, setWorkflowHistory] = useState([]);
+
+  // Your actual app URLs and workflow steps
+  const workflowSteps = [
+    {
+      id: 1,
+      title: "Calculate Pricing",
+      description: "Use POS System to calculate frame pricing",
+      icon: <Calculator className="w-5 h-5" />,
+      appName: "POS System",
+      url: "https://jays-frames-dashboard-jayframes.replit.app/pos", // Your actual POS URL
+      action: "Calculate order pricing and get customer details",
+      dataNeeded: ["Customer info", "Frame dimensions", "Materials"],
+      dataProvided: ["Total price", "Materials list", "Customer data"],
+      estimatedTime: "5 min"
+    },
+    {
+      id: 2, 
+      title: "Generate Invoice",
+      description: "Auto-populate invoice from POS data",
+      icon: <FileText className="w-5 h-5" />,
+      appName: "Invoice Generator",
+      url: "https://docs.google.com/document/d/1pJi-olmsZcyZ1w3da5Lq821udXxiFEbSHyP05HIMKJg/edit",
+      action: "Create professional invoice with order details",
+      dataNeeded: ["POS calculation data"],
+      dataProvided: ["Invoice PDF", "Payment link"],
+      estimatedTime: "2 min"
+    },
+    {
+      id: 3,
+      title: "Process Payment", 
+      description: "Send payment link or process payment",
+      icon: <CreditCard className="w-5 h-5" />,
+      appName: "Stripe Payment",
+      url: "https://dashboard.stripe.com", // Your Stripe dashboard
+      action: "Generate payment link and send to customer",
+      dataNeeded: ["Invoice total", "Customer email"],
+      dataProvided: ["Payment confirmation", "Receipt"],
+      estimatedTime: "2 min"
+    },
+    {
+      id: 4,
+      title: "Send Invoice",
+      description: "Email invoice and payment details to customer",
+      icon: <Mail className="w-5 h-5" />,
+      appName: "Email System",
+      url: "mailto:", // Will open default email client
+      action: "Send professional invoice email to customer",
+      dataNeeded: ["Customer email", "Invoice PDF", "Payment link"],
+      dataProvided: ["Email confirmation"],
+      estimatedTime: "1 min"
+    },
+    {
+      id: 5,
+      title: "Save Records",
+      description: "Store invoice PDF and order details",
+      icon: <Download className="w-5 h-5" />,
+      appName: "File Storage",
+      url: "https://drive.google.com", // Your Google Drive
+      action: "Save invoice PDF with proper naming convention",
+      dataNeeded: ["Invoice PDF", "Order number"],
+      dataProvided: ["Stored invoice", "File reference"],
+      estimatedTime: "1 min"
+    },
+    {
+      id: 6,
+      title: "Create Production Card",
+      description: "Add order to Kanban for production tracking",
+      icon: <Clipboard className="w-5 h-5" />,
+      appName: "Kanban Board",
+      url: "https://jays-frames-dashboard-jayframes.replit.app/kanban", // Your Kanban URL
+      action: "Create production tracking card with all order details",
+      dataNeeded: ["Complete order data", "Materials list", "Timeline"],
+      dataProvided: ["Production card", "Status tracking"],
+      estimatedTime: "2 min"
+    }
+  ];
+
+  const startNewWorkflow = () => {
+    const workflowId = `WF-${Date.now()}`;
+    setActiveWorkflow(workflowId);
+    setCurrentStep(0);
+    setOrderData({
+      id: `JF-${Date.now()}`,
+      startedAt: new Date().toISOString(),
+      status: 'in-progress'
+    });
+  };
+
+  const completeStep = (stepId, data = {}) => {
+    setOrderData(prev => ({
+      ...prev,
+      [`step${stepId}`]: {
+        completedAt: new Date().toISOString(),
+        data: data
+      }
+    }));
+    setCurrentStep(stepId);
+  };
+
+  const openApp = (url, stepId) => {
+    window.open(url, '_blank');
+    // Mark step as active
+    setCurrentStep(stepId - 1);
+  };
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-gray-50 min-h-screen">
+      {/* Header Enhancement */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Jay's Frames Command Center</h1>
+            <p className="text-gray-600">Streamlined order processing workflow</p>
+          </div>
+          <div className="flex space-x-3">
+            {activeWorkflow ? (
+              <>
+                <div className="text-sm text-gray-500">
+                  Active Order: <span className="font-medium text-blue-600">{orderData.id}</span>
+                </div>
+                <button 
+                  onClick={() => setActiveWorkflow(null)}
+                  className="px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200"
+                >
+                  <Pause className="w-4 h-4 inline mr-2" />
+                  Pause Workflow
+                </button>
+              </>
+            ) : (
+              <button 
+                onClick={startNewWorkflow}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <Play className="w-4 h-4" />
+                <span>Start New Order</span>
+              </button>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Workflow Progress */}
+      {activeWorkflow && (
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <h2 className="text-lg font-semibold mb-4">Order Processing Progress</h2>
+          <div className="flex items-center space-x-4 mb-6">
+            {workflowSteps.map((step, index) => (
+              <div key={step.id} className="flex items-center">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  index < currentStep ? 'bg-green-100 text-green-600' :
+                  index === currentStep ? 'bg-blue-100 text-blue-600' :
+                  'bg-gray-100 text-gray-400'
+                }`}>
+                  {index < currentStep ? <CheckCircle className="w-4 h-4" /> : step.icon}
+                </div>
+                {index < workflowSteps.length - 1 && (
+                  <ArrowRight className={`w-4 h-4 mx-2 ${
+                    index < currentStep ? 'text-green-400' : 'text-gray-300'
+                  }`} />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="text-sm text-gray-600">
+            Step {currentStep + 1} of {workflowSteps.length}: {workflowSteps[currentStep]?.title}
+          </div>
+        </div>
+      )}
+
+      {/* Current Step Detail */}
+      {activeWorkflow && (
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-start justify-between">
+            <div className="flex-1">
+              <div className="flex items-center space-x-3 mb-4">
+                <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                  {workflowSteps[currentStep]?.icon}
+                </div>
+                <div>
+                  <h3 className="text-xl font-semibold text-gray-900">
+                    {workflowSteps[currentStep]?.title}
+                  </h3>
+                  <p className="text-gray-600">{workflowSteps[currentStep]?.description}</p>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-blue-900 mb-2">What to do:</h4>
+                  <p className="text-sm text-blue-700">{workflowSteps[currentStep]?.action}</p>
+                </div>
+                <div className="bg-yellow-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-yellow-900 mb-2">You'll need:</h4>
+                  <ul className="text-sm text-yellow-700 space-y-1">
+                    {workflowSteps[currentStep]?.dataNeeded.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h4 className="font-medium text-green-900 mb-2">You'll get:</h4>
+                  <ul className="text-sm text-green-700 space-y-1">
+                    {workflowSteps[currentStep]?.dataProvided.map((item, idx) => (
+                      <li key={idx}>• {item}</li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <div className="flex items-center justify-between">
+            <div className="flex items-center space-x-2 text-sm text-gray-500">
+              <Clock className="w-4 h-4" />
+              <span>Estimated time: {workflowSteps[currentStep]?.estimatedTime}</span>
+            </div>
+            <div className="flex space-x-3">
+              <button 
+                onClick={() => openApp(workflowSteps[currentStep]?.url, workflowSteps[currentStep]?.id)}
+                className="px-6 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 flex items-center space-x-2"
+              >
+                <ExternalLink className="w-4 h-4" />
+                <span>Open {workflowSteps[currentStep]?.appName}</span>
+              </button>
+              <button 
+                onClick={() => completeStep(currentStep + 1)}
+                className="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 flex items-center space-x-2"
+              >
+                <CheckCircle className="w-4 h-4" />
+                <span>Mark Complete</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Enhanced App Grid */}
+      <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+        <h2 className="text-lg font-semibold mb-4">Quick Access to Your Tools</h2>
+        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          {workflowSteps.map((step) => (
+            <div key={step.id} className="text-center">
+              <button
+                onClick={() => openApp(step.url, step.id)}
+                className={`w-16 h-16 rounded-lg flex items-center justify-center mb-2 transition-colors ${
+                  activeWorkflow && currentStep === step.id - 1 
+                    ? 'bg-blue-100 text-blue-600 ring-2 ring-blue-300' 
+                    : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                }`}
+              >
+                {step.icon}
+              </button>
+              <div className="text-xs font-medium text-gray-900">{step.appName}</div>
+              <div className="text-xs text-gray-500">{step.estimatedTime}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Workflow Templates */}
+      <div className="bg-white rounded-lg shadow-sm p-6">
+        <h2 className="text-lg font-semibold mb-4">Workflow Templates</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer">
+            <h3 className="font-medium text-gray-900 mb-2">Standard Order</h3>
+            <p className="text-sm text-gray-600 mb-3">Complete order processing from quote to production</p>
+            <div className="text-xs text-gray-500">6 steps • ~15 minutes</div>
+          </div>
+          <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer">
+            <h3 className="font-medium text-gray-900 mb-2">Rush Order</h3>
+            <p className="text-sm text-gray-600 mb-3">Expedited processing for urgent orders</p>
+            <div className="text-xs text-gray-500">4 steps • ~8 minutes</div>
+          </div>
+          <div className="border border-gray-200 rounded-lg p-4 hover:border-blue-300 cursor-pointer">
+            <h3 className="font-medium text-gray-900 mb-2">Quote Only</h3>
+            <p className="text-sm text-gray-600 mb-3">Generate quote without processing payment</p>
+            <div className="text-xs text-gray-500">3 steps • ~5 minutes</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WorkflowEnhancement;

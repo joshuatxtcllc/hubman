@@ -1,0 +1,649 @@
+import React, { useState, useEffect } from 'react';
+import { Calculator, Save, FileText, Upload, DollarSign, Package, User, ShoppingCart, Printer } from 'lucide-react';
+
+const JaysFramesPOS = () => {
+  // Core state management
+  const [activeTab, setActiveTab] = useState('calculator');
+  const [currentOrder, setCurrentOrder] = useState({
+    id: null,
+    customer: { name: '', phone: '', email: '', address: '' },
+    items: [],
+    subtotal: 0,
+    tax: 0,
+    total: 0,
+    createdAt: null,
+    status: 'draft'
+  });
+  
+  const [savedOrders, setSavedOrders] = useState([]);
+  const [vendorCatalogs, setVendorCatalogs] = useState([]);
+  const [currentFrameCalc, setCurrentFrameCalc] = useState({
+    width: 0,
+    height: 0,
+    frameType: '',
+    matting: 'none',
+    glass: 'regular',
+    backing: 'regular',
+    labor: 0,
+    rush: false
+  });
+
+  // Houston Heights business factors
+  const houstonfactors = {
+    rent: 2200, // monthly
+    utilities: 180,
+    insurance: 250,
+    laborRate: 22.50, // per hour
+    salesTax: 0.0825, // Houston sales tax
+    overhead: 0.35 // 35% overhead factor
+  };
+
+  // Frame types with base costs (wholesale prices)
+  const frameTypes = [
+    { name: 'Basic Wood', baseCost: 12, category: 'budget', multiplier: 4.5 },
+    { name: 'Premium Wood', baseCost: 28, category: 'mid', multiplier: 3.8 },
+    { name: 'Metal Frame', baseCost: 18, category: 'mid', multiplier: 4.0 },
+    { name: 'Designer Wood', baseCost: 45, category: 'premium', multiplier: 3.2 },
+    { name: 'Custom Hardwood', baseCost: 85, category: 'luxury', multiplier: 2.5 },
+    { name: 'Museum Quality', baseCost: 150, category: 'luxury', multiplier: 1.9 }
+  ];
+
+  const mattingOptions = [
+    { name: 'none', cost: 0, multiplier: 1 },
+    { name: 'single', cost: 15, multiplier: 3.5 },
+    { name: 'double', cost: 25, multiplier: 3.2 },
+    { name: 'triple', cost: 40, multiplier: 2.8 },
+    { name: 'museum board', cost: 65, multiplier: 2.3 }
+  ];
+
+  const glassOptions = [
+    { name: 'regular', cost: 8, multiplier: 4.0 },
+    { name: 'non-glare', cost: 18, multiplier: 3.5 },
+    { name: 'uv-protection', cost: 28, multiplier: 3.0 },
+    { name: 'museum-glass', cost: 55, multiplier: 2.2 }
+  ];
+
+  // Dynamic pricing calculation with sliding scale
+  const calculateFramingPrice = () => {
+    if (!currentFrameCalc.width || !currentFrameCalc.height || !currentFrameCalc.frameType) {
+      return { breakdown: {}, total: 0 };
+    }
+
+    const selectedFrame = frameTypes.find(f => f.name === currentFrameCalc.frameType);
+    const selectedMat = mattingOptions.find(m => m.name === currentFrameCalc.matting);
+    const selectedGlass = glassOptions.find(g => g.name === currentFrameCalc.glass);
+    
+    if (!selectedFrame || !selectedMat || !selectedGlass) return { breakdown: {}, total: 0 };
+
+    // Calculate perimeter for frame
+    const perimeter = (currentFrameCalc.width + currentFrameCalc.height) * 2;
+    const area = currentFrameCalc.width * currentFrameCalc.height;
+    
+    // Frame cost
+    const frameCost = selectedFrame.baseCost * (perimeter / 12); // per linear foot
+    const framePrice = frameCost * selectedFrame.multiplier;
+    
+    // Matting cost
+    const matCost = selectedMat.cost * (area / 144); // per square foot
+    const matPrice = matCost * selectedMat.multiplier;
+    
+    // Glass cost
+    const glassCost = selectedGlass.cost * (area / 144);
+    const glassPrice = glassCost * selectedGlass.multiplier;
+    
+    // Labor calculation (Houston rates)
+    const complexityFactor = selectedFrame.category === 'luxury' ? 2.5 : 
+                           selectedFrame.category === 'premium' ? 1.8 : 1.2;
+    const laborHours = (area / 288) * complexityFactor; // base hours per sq ft
+    const laborCost = laborHours * houstonfactors.laborRate;
+    
+    // Overhead (Houston Heights specific)
+    const subtotal = framePrice + matPrice + glassPrice + laborCost;
+    const overhead = subtotal * houstonfactors.overhead;
+    
+    // Rush fee
+    const rushFee = currentFrameCalc.rush ? subtotal * 0.5 : 0;
+    
+    const total = subtotal + overhead + rushFee;
+    
+    return {
+      breakdown: {
+        frame: framePrice,
+        matting: matPrice,
+        glass: glassPrice,
+        labor: laborCost,
+        overhead: overhead,
+        rush: rushFee,
+        subtotal: subtotal,
+        total: total
+      },
+      total: total
+    };
+  };
+
+  // Add calculated frame to order
+  const addFrameToOrder = () => {
+    const calculation = calculateFramingPrice();
+    if (calculation.total === 0) return;
+
+    const frameItem = {
+      id: Date.now(),
+      type: 'custom-frame',
+      description: `${currentFrameCalc.width}"x${currentFrameCalc.height}" ${currentFrameCalc.frameType}`,
+      specs: { ...currentFrameCalc },
+      price: calculation.total,
+      breakdown: calculation.breakdown,
+      materials: generateMaterialsList(currentFrameCalc)
+    };
+
+    setCurrentOrder(prev => ({
+      ...prev,
+      items: [...prev.items, frameItem],
+      subtotal: prev.subtotal + calculation.total,
+      tax: (prev.subtotal + calculation.total) * houstonfactors.salesTax,
+      total: (prev.subtotal + calculation.total) * (1 + houstonfactors.salesTax)
+    }));
+
+    // Reset calculator
+    setCurrentFrameCalc({
+      width: 0,
+      height: 0,
+      frameType: '',
+      matting: 'none',
+      glass: 'regular',
+      backing: 'regular',
+      labor: 0,
+      rush: false
+    });
+  };
+
+  // Generate materials list for purchasing
+  const generateMaterialsList = (specs) => {
+    const perimeter = (specs.width + specs.height) * 2;
+    const area = specs.width * specs.height;
+    
+    return [
+      {
+        item: specs.frameType,
+        quantity: Math.ceil(perimeter / 12),
+        unit: 'linear feet',
+        supplier: 'Frame Supplier'
+      },
+      {
+        item: `${specs.glass} glass`,
+        quantity: Math.ceil(area / 144),
+        unit: 'square feet',
+        supplier: 'Glass Supplier'
+      },
+      ...(specs.matting !== 'none' ? [{
+        item: `${specs.matting} matting`,
+        quantity: Math.ceil(area / 144),
+        unit: 'square feet',
+        supplier: 'Mat Supplier'
+      }] : []),
+      {
+        item: 'Backing board',
+        quantity: 1,
+        unit: 'piece',
+        supplier: 'General Supplier'
+      }
+    ];
+  };
+
+  // Save order
+  const saveOrder = () => {
+    if (currentOrder.items.length === 0) return;
+    
+    const orderToSave = {
+      ...currentOrder,
+      id: currentOrder.id || Date.now(),
+      createdAt: currentOrder.createdAt || new Date().toISOString(),
+      status: 'saved'
+    };
+    
+    setSavedOrders(prev => {
+      const existing = prev.findIndex(o => o.id === orderToSave.id);
+      if (existing >= 0) {
+        const updated = [...prev];
+        updated[existing] = orderToSave;
+        return updated;
+      }
+      return [...prev, orderToSave];
+    });
+    
+    // Reset current order
+    setCurrentOrder({
+      id: null,
+      customer: { name: '', phone: '', email: '', address: '' },
+      items: [],
+      subtotal: 0,
+      tax: 0,
+      total: 0,
+      createdAt: null,
+      status: 'draft'
+    });
+  };
+
+  // File upload for vendor catalogs
+  const handleCatalogUpload = (event) => {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    // Here you would process the uploaded catalog file
+    // For now, we'll just store the file info
+    const catalogInfo = {
+      id: Date.now(),
+      name: file.name,
+      size: file.size,
+      uploadDate: new Date().toISOString(),
+      type: file.type
+    };
+    
+    setVendorCatalogs(prev => [...prev, catalogInfo]);
+  };
+
+  const pricing = calculateFramingPrice();
+
+  return (
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="max-w-7xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900">Jay's Frames</h1>
+              <p className="text-gray-600">Custom Framing Point of Sale</p>
+            </div>
+            <div className="text-right">
+              <p className="text-sm text-gray-500">Houston Heights, TX</p>
+              <p className="text-sm text-gray-500">{new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+        </div>
+
+        {/* Navigation */}
+        <div className="bg-white rounded-lg shadow-sm mb-6">
+          <nav className="flex space-x-1 p-1">
+            {[
+              { id: 'calculator', label: 'Frame Calculator', icon: Calculator },
+              { id: 'orders', label: 'Orders', icon: ShoppingCart },
+              { id: 'materials', label: 'Materials', icon: Package },
+              { id: 'catalogs', label: 'Vendor Catalogs', icon: Upload }
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id)}
+                className={`flex items-center space-x-2 px-4 py-2 rounded-md font-medium transition-colors ${
+                  activeTab === id
+                    ? 'bg-blue-100 text-blue-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
+                }`}
+              >
+                <Icon className="w-4 h-4" />
+                <span>{label}</span>
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Main Content */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          
+          {/* Left Column - Primary Interface */}
+          <div className="lg:col-span-2">
+            
+            {/* Frame Calculator Tab */}
+            {activeTab === 'calculator' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold mb-4">Custom Frame Calculator</h2>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Width (inches)</label>
+                    <input
+                      type="number"
+                      step="0.25"
+                      value={currentFrameCalc.width || ''}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, width: parseFloat(e.target.value) || 0 }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Height (inches)</label>
+                    <input
+                      type="number"
+                      step="0.25"
+                      value={currentFrameCalc.height || ''}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, height: parseFloat(e.target.value) || 0 }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                      placeholder="0.00"
+                    />
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Frame Type</label>
+                    <select
+                      value={currentFrameCalc.frameType}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, frameType: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="">Select Frame Type</option>
+                      {frameTypes.map(frame => (
+                        <option key={frame.name} value={frame.name}>
+                          {frame.name} (${frame.baseCost}/ft - {frame.multiplier}x markup)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Matting</label>
+                    <select
+                      value={currentFrameCalc.matting}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, matting: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {mattingOptions.map(mat => (
+                        <option key={mat.name} value={mat.name}>
+                          {mat.name} {mat.cost > 0 && `($${mat.cost}/sqft)`}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-2">Glass Type</label>
+                    <select
+                      value={currentFrameCalc.glass}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, glass: e.target.value }))}
+                      className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      {glassOptions.map(glass => (
+                        <option key={glass.name} value={glass.name}>
+                          {glass.name} (${glass.cost}/sqft)
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="rush"
+                      checked={currentFrameCalc.rush}
+                      onChange={(e) => setCurrentFrameCalc(prev => ({ ...prev, rush: e.target.checked }))}
+                      className="w-4 h-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                    />
+                    <label htmlFor="rush" className="text-sm font-medium text-gray-700">
+                      Rush Order (+50%)
+                    </label>
+                  </div>
+                </div>
+
+                {/* Price Breakdown */}
+                {pricing.total > 0 && (
+                  <div className="bg-gray-50 rounded-lg p-4 mb-4">
+                    <h3 className="font-semibold mb-3">Price Breakdown</h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Frame:</span>
+                        <span>${pricing.breakdown.frame?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Matting:</span>
+                        <span>${pricing.breakdown.matting?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Glass:</span>
+                        <span>${pricing.breakdown.glass?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Labor:</span>
+                        <span>${pricing.breakdown.labor?.toFixed(2)}</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Overhead (35%):</span>
+                        <span>${pricing.breakdown.overhead?.toFixed(2)}</span>
+                      </div>
+                      {pricing.breakdown.rush > 0 && (
+                        <div className="flex justify-between text-orange-600">
+                          <span>Rush Fee:</span>
+                          <span>${pricing.breakdown.rush?.toFixed(2)}</span>
+                        </div>
+                      )}
+                      <div className="border-t pt-2 flex justify-between font-semibold text-lg">
+                        <span>Total:</span>
+                        <span>${pricing.total.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <button
+                  onClick={addFrameToOrder}
+                  disabled={pricing.total === 0}
+                  className="w-full bg-blue-600 text-white py-3 px-4 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
+                >
+                  Add to Order
+                </button>
+              </div>
+            )}
+
+            {/* Orders Tab */}
+            {activeTab === 'orders' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold mb-4">Saved Orders</h2>
+                
+                {savedOrders.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No saved orders yet</p>
+                ) : (
+                  <div className="space-y-4">
+                    {savedOrders.map(order => (
+                      <div key={order.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-2">
+                          <div>
+                            <h3 className="font-semibold">Order #{order.id}</h3>
+                            <p className="text-sm text-gray-600">{order.customer.name || 'Walk-in Customer'}</p>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-semibold">${order.total.toFixed(2)}</p>
+                            <p className="text-sm text-gray-500">{new Date(order.createdAt).toLocaleDateString()}</p>
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {order.items.map(item => (
+                            <p key={item.id} className="text-sm text-gray-700">
+                              • {item.description} - ${item.price.toFixed(2)}
+                            </p>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Materials Tab */}
+            {activeTab === 'materials' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold mb-4">Materials List</h2>
+                
+                {currentOrder.items.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">Add items to order to see materials list</p>
+                ) : (
+                  <div className="space-y-4">
+                    {currentOrder.items.map(item => (
+                      <div key={item.id} className="border border-gray-200 rounded-lg p-4">
+                        <h3 className="font-semibold mb-2">{item.description}</h3>
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-sm">
+                          <div className="font-medium">Material</div>
+                          <div className="font-medium">Quantity</div>
+                          <div className="font-medium">Supplier</div>
+                          {item.materials?.map((material, idx) => (
+                            <React.Fragment key={idx}>
+                              <div>{material.item}</div>
+                              <div>{material.quantity} {material.unit}</div>
+                              <div>{material.supplier}</div>
+                            </React.Fragment>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Vendor Catalogs Tab */}
+            {activeTab === 'catalogs' && (
+              <div className="bg-white rounded-lg shadow-sm p-6">
+                <h2 className="text-xl font-semibold mb-4">Vendor Catalogs</h2>
+                
+                <div className="mb-6">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Upload Vendor Catalog
+                  </label>
+                  <input
+                    type="file"
+                    accept=".pdf,.xlsx,.csv"
+                    onChange={handleCatalogUpload}
+                    className="w-full p-3 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <p className="text-sm text-gray-500 mt-1">
+                    Supported formats: PDF, Excel, CSV
+                  </p>
+                </div>
+
+                {vendorCatalogs.length === 0 ? (
+                  <p className="text-gray-500 text-center py-8">No catalogs uploaded yet</p>
+                ) : (
+                  <div className="space-y-3">
+                    {vendorCatalogs.map(catalog => (
+                      <div key={catalog.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg">
+                        <div>
+                          <h3 className="font-medium">{catalog.name}</h3>
+                          <p className="text-sm text-gray-500">
+                            Uploaded {new Date(catalog.uploadDate).toLocaleDateString()}
+                          </p>
+                        </div>
+                        <div className="text-sm text-gray-500">
+                          {(catalog.size / 1024 / 1024).toFixed(2)} MB
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+
+          {/* Right Column - Current Order */}
+          <div className="lg:col-span-1">
+            <div className="bg-white rounded-lg shadow-sm p-6 sticky top-4">
+              <h2 className="text-xl font-semibold mb-4">Current Order</h2>
+              
+              {/* Customer Info */}
+              <div className="mb-6">
+                <h3 className="font-medium mb-3">Customer Information</h3>
+                <div className="space-y-3">
+                  <input
+                    type="text"
+                    placeholder="Customer Name"
+                    value={currentOrder.customer.name}
+                    onChange={(e) => setCurrentOrder(prev => ({
+                      ...prev,
+                      customer: { ...prev.customer, name: e.target.value }
+                    }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <input
+                    type="tel"
+                    placeholder="Phone Number"
+                    value={currentOrder.customer.phone}
+                    onChange={(e) => setCurrentOrder(prev => ({
+                      ...prev,
+                      customer: { ...prev.customer, phone: e.target.value }
+                    }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                  <input
+                    type="email"
+                    placeholder="Email"
+                    value={currentOrder.customer.email}
+                    onChange={(e) => setCurrentOrder(prev => ({
+                      ...prev,
+                      customer: { ...prev.customer, email: e.target.value }
+                    }))}
+                    className="w-full p-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+              </div>
+
+              {/* Order Items */}
+              <div className="mb-6">
+                <h3 className="font-medium mb-3">Items</h3>
+                {currentOrder.items.length === 0 ? (
+                  <p className="text-gray-500 text-sm">No items added</p>
+                ) : (
+                  <div className="space-y-2">
+                    {currentOrder.items.map(item => (
+                      <div key={item.id} className="flex justify-between items-start p-2 bg-gray-50 rounded">
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">{item.description}</p>
+                        </div>
+                        <p className="text-sm font-semibold">${item.price.toFixed(2)}</p>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              {/* Order Totals */}
+              {currentOrder.items.length > 0 && (
+                <div className="mb-6 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>Subtotal:</span>
+                    <span>${currentOrder.subtotal.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span>Tax ({(houstonfactors.salesTax * 100).toFixed(2)}%):</span>
+                    <span>${currentOrder.tax.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between font-semibold text-lg border-t pt-2">
+                    <span>Total:</span>
+                    <span>${currentOrder.total.toFixed(2)}</span>
+                  </div>
+                </div>
+              )}
+
+              {/* Action Buttons */}
+              <div className="space-y-2">
+                <button
+                  onClick={saveOrder}
+                  disabled={currentOrder.items.length === 0}
+                  className="w-full bg-green-600 text-white py-2 px-4 rounded-md font-medium hover:bg-green-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Save className="w-4 h-4" />
+                  <span>Save Order</span>
+                </button>
+                
+                <button
+                  disabled={currentOrder.items.length === 0}
+                  className="w-full bg-blue-600 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors flex items-center justify-center space-x-2"
+                >
+                  <Printer className="w-4 h-4" />
+                  <span>Print Quote</span>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default JaysFramesPOS;

@@ -1,0 +1,206 @@
+# Jay's Frames Enhancement Strategy
+
+## Current State Analysis ✅
+
+**Working Components:**
+- ✅ Central Hub App (navigation)
+- ✅ Frame Designer (calculations)  
+- ✅ POS System (pricing)
+- ✅ Kanban System (order saving)
+- ✅ Digital Vendor Catalogs (data)
+- ✅ Google Sheets Integration
+
+**Issues to Address:**
+- 🔧 Reliable order saving/referencing in Frame Designer & POS
+- 🔧 Vendor catalog integration for automatic pricing
+- 🔧 Unified data flow between systems
+- 🔧 Materials list generation
+
+## Phase 1: Connect & Stabilize (1-2 weeks)
+
+### 1.1 Fix Order Persistence
+**Problem:** Frame Designer & POS can't reliably save orders
+**Solution:** Use your working Kanban system as the central order store
+
+```javascript
+// Add to Frame Designer & POS
+const saveOrderToKanban = async (orderData) => {
+  const kanbanOrder = {
+    id: `JF-${Date.now()}`,
+    title: `${orderData.customer.name} - ${orderData.frameSpecs.width}"×${orderData.frameSpecs.height}"`,
+    status: 'quote',
+    customer: orderData.customer,
+    items: orderData.items,
+    total: orderData.pricing.totalCost,
+    materials: orderData.materials,
+    createdAt: new Date().toISOString()
+  };
+  
+  // Send to Kanban API endpoint
+  await fetch('/api/kanban/orders', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(kanbanOrder)
+  });
+};
+```
+
+### 1.2 Integrate Vendor Catalogs
+**Problem:** Manual pricing vs digital catalogs
+**Solution:** Create catalog price lookup service
+
+```javascript
+// Vendor Catalog Integration
+class VendorCatalogService {
+  constructor() {
+    this.catalogs = {
+      'larson-juhl': null,    // Your Larson Juhl CSV data
+      'studio-moulding': null // Your Studio Moulding data
+    };
+  }
+
+  async loadCatalogs() {
+    // Load from Google Sheets or uploaded files
+    this.catalogs['larson-juhl'] = await this.parseCSV('larson-juhl-data');
+    this.catalogs['studio-moulding'] = await this.parseCSV('studio-moulding-data');
+  }
+
+  findFramePrice(frameType, dimensions) {
+    // Search catalogs for matching frame
+    const frame = this.searchCatalogs(frameType);
+    if (frame) {
+      return this.calculatePrice(frame, dimensions);
+    }
+    return null; // Fall back to manual pricing
+  }
+
+  calculatePrice(frame, dimensions) {
+    const perimeter = (dimensions.width + dimensions.height) * 2;
+    const basePrice = frame.pricePerFoot * (perimeter / 12);
+    
+    // Apply your sliding scale markup
+    const markup = this.getMarkupFactor(basePrice);
+    return basePrice * markup;
+  }
+
+  getMarkupFactor(basePrice) {
+    if (basePrice < 20) return 4.5;
+    if (basePrice < 40) return 3.8;
+    if (basePrice < 60) return 3.2;
+    if (basePrice < 100) return 2.5;
+    return 1.9;
+  }
+}
+```
+
+### 1.3 Unified Materials List Generator
+```javascript
+// Materials List Service
+class MaterialsListGenerator {
+  generate(orderData) {
+    const { frameSpecs, customer } = orderData;
+    const perimeter = (frameSpecs.width + frameSpecs.height) * 2;
+    
+    return {
+      orderId: orderData.id,
+      customer: customer.name,
+      materials: [
+        {
+          item: frameSpecs.frameType,
+          quantity: Math.ceil(perimeter / 12),
+          unit: 'linear feet',
+          vendor: this.getFrameVendor(frameSpecs.frameType),
+          cost: this.getWholesaleCost(frameSpecs.frameType, perimeter)
+        },
+        {
+          item: `${frameSpecs.glass} glass`,
+          quantity: Math.ceil((frameSpecs.width * frameSpecs.height) / 144),
+          unit: 'square feet',
+          vendor: 'Glass Supplier',
+          cost: this.getGlassCost(frameSpecs.glass, frameSpecs.width * frameSpecs.height)
+        },
+        // Add matting, backing, etc.
+      ],
+      generatedAt: new Date().toISOString()
+    };
+  }
+}
+```
+
+## Phase 2: Advanced Integration (2-4 weeks)
+
+### 2.1 Google Sheets Sync
+- Two-way sync between apps and Google Sheets
+- Real-time price updates from vendor catalogs
+- Automated materials ordering
+
+### 2.2 Customer Management
+- Centralized customer database
+- Order history tracking
+- Automated follow-ups
+
+### 2.3 Production Workflow
+- Order status tracking (Quote → Approved → In Progress → Complete)
+- Deadline management
+- Customer notifications
+
+## Phase 3: Business Intelligence (4-6 weeks)
+
+### 3.1 Analytics Dashboard
+- Sales performance
+- Popular frame types
+- Profit margins by product
+- Customer lifetime value
+
+### 3.2 Inventory Management
+- Track material usage
+- Automatic reorder points
+- Vendor performance analysis
+
+### 3.3 Mobile Optimization
+- Tablet-friendly interface
+- Offline order creation
+- Photo integration for custom orders
+
+## Implementation Priority
+
+### Week 1: Critical Fixes
+1. ✅ Fix order saving in Frame Designer & POS (use Kanban backend)
+2. ✅ Create vendor catalog lookup service
+3. ✅ Test unified order flow
+
+### Week 2: Integration
+1. ✅ Connect all apps to central order system
+2. ✅ Implement materials list generation
+3. ✅ Add Google Sheets sync
+
+### Week 3-4: Polish
+1. ✅ User interface improvements
+2. ✅ Error handling and validation
+3. ✅ Performance optimization
+4. ✅ Production deployment
+
+## Expected Outcomes
+
+**Immediate (Phase 1):**
+- ✅ Reliable order saving and retrieval
+- ✅ Automated pricing from vendor catalogs
+- ✅ Unified materials lists
+- ✅ Streamlined workflow
+
+**Medium-term (Phase 2-3):**
+- ✅ Complete business management system
+- ✅ Increased efficiency and accuracy
+- ✅ Better customer service
+- ✅ Data-driven decision making
+
+## Budget Considerations
+
+**Development Time:** 4-6 weeks total
+**Hosting:** Current Replit setup is sufficient
+**Additional Costs:** Minimal (possibly Google Sheets API usage)
+
+**ROI:** 
+- Time saved: 2-3 hours per day on order management
+- Pricing accuracy: Eliminates undercharging mistakes
+- Customer satisfaction: Faster quotes and delivery times

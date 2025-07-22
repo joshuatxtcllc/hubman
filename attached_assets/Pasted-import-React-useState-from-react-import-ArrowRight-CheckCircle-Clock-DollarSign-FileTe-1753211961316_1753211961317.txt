@@ -1,0 +1,295 @@
+import React, { useState } from 'react';
+import { ArrowRight, CheckCircle, Clock, DollarSign, FileText, Mail, Download, Clipboard, Zap, AlertCircle } from 'lucide-react';
+
+const WorkflowAutomation = () => {
+  const [activeStep, setActiveStep] = useState(1);
+
+  const currentWorkflow = [
+    {
+      id: 1,
+      title: "POS Calculator",
+      description: "Calculate frame pricing",
+      tool: "Your existing POS",
+      manual: true,
+      time: "5 min",
+      icon: <DollarSign className="w-5 h-5" />
+    },
+    {
+      id: 2,
+      title: "Create Invoice",
+      description: "Manual Google Doc editing",
+      tool: "Google Doc template",
+      manual: true,
+      time: "10 min",
+      icon: <FileText className="w-5 h-5" />
+    },
+    {
+      id: 3,
+      title: "Process Payment",
+      description: "Manual Stripe transaction",
+      tool: "Stripe dashboard",
+      manual: true,
+      time: "3 min",
+      icon: <DollarSign className="w-5 h-5" />
+    },
+    {
+      id: 4,
+      title: "Email Invoice",
+      description: "Manual email send",
+      tool: "Email client",
+      manual: true,
+      time: "2 min",
+      icon: <Mail className="w-5 h-5" />
+    },
+    {
+      id: 5,
+      title: "Save PDF",
+      description: "Download & file storage",
+      tool: "Manual filing",
+      manual: true,
+      time: "2 min",
+      icon: <Download className="w-5 h-5" />
+    },
+    {
+      id: 6,
+      title: "Update Kanban",
+      description: "Manual data entry",
+      tool: "Kanban app",
+      manual: true,
+      time: "5 min",
+      icon: <Clipboard className="w-5 h-5" />
+    }
+  ];
+
+  const automatedWorkflow = [
+    {
+      id: 1,
+      title: "POS Calculator",
+      description: "Calculate pricing + auto-populate form",
+      tool: "Enhanced POS",
+      manual: false,
+      time: "3 min",
+      icon: <DollarSign className="w-5 h-5" />,
+      automation: "Auto-capture customer & order data"
+    },
+    {
+      id: 2,
+      title: "One-Click Invoice",
+      description: "Auto-generate from POS data",
+      tool: "Integrated invoice generator",
+      manual: false,
+      time: "30 sec",
+      icon: <Zap className="w-5 h-5" />,
+      automation: "Auto-fill Google Doc template"
+    },
+    {
+      id: 3,
+      title: "Embedded Payment",
+      description: "Stripe integration in workflow",
+      tool: "Embedded Stripe",
+      manual: false,
+      time: "1 min",
+      icon: <DollarSign className="w-5 h-5" />,
+      automation: "Payment link auto-generated"
+    },
+    {
+      id: 4,
+      title: "Auto Email",
+      description: "Invoice auto-sent on payment",
+      tool: "Email automation",
+      manual: false,
+      time: "Instant",
+      icon: <Mail className="w-5 h-5" />,
+      automation: "Triggered email with PDF"
+    },
+    {
+      id: 5,
+      title: "Auto PDF Storage",
+      description: "Cloud storage + numbering",
+      tool: "Automated filing",
+      manual: false,
+      time: "Instant",
+      icon: <Download className="w-5 h-5" />,
+      automation: "Auto-named & stored"
+    },
+    {
+      id: 6,
+      title: "Auto Kanban Update",
+      description: "Production card created",
+      tool: "API integration",
+      manual: false,
+      time: "Instant",
+      icon: <CheckCircle className="w-5 h-5" />,
+      automation: "Full order details transferred"
+    }
+  ];
+
+  const quickWins = [
+    {
+      title: "Invoice Auto-Fill",
+      description: "Pass POS data directly to Google Doc",
+      impact: "High",
+      effort: "Low",
+      timesSaved: "8 min per order"
+    },
+    {
+      title: "Kanban Auto-Create",
+      description: "Create production cards automatically",
+      impact: "High", 
+      effort: "Low",
+      timesSaved: "5 min per order"
+    },
+    {
+      title: "Email Templates",
+      description: "Pre-written emails with merge fields",
+      impact: "Medium",
+      effort: "Low", 
+      timesSaved: "2 min per order"
+    },
+    {
+      title: "Payment Links",
+      description: "Auto-generate Stripe payment links",
+      impact: "Medium",
+      effort: "Medium",
+      timesSaved: "1 min per order"
+    }
+  ];
+
+  return (
+    <div className="max-w-6xl mx-auto p-6 bg-white">
+      <div className="mb-8">
+        <h1 className="text-3xl font-bold text-gray-900 mb-4">Jay's Frames Workflow Automation</h1>
+        <div className="bg-green-50 border border-green-200 rounded-lg p-4">
+          <div className="flex items-center space-x-2">
+            <CheckCircle className="w-5 h-5 text-green-600" />
+            <span className="font-semibold text-green-800">Perfect Strategy!</span>
+          </div>
+          <p className="text-green-700 mt-2">
+            Connecting existing tools in workflow order is the most efficient approach. 
+            Current time per order: <strong>27 minutes</strong> → Target: <strong>5 minutes</strong>
+          </p>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+        {/* Current Workflow */}
+        <div className="bg-red-50 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-red-800 mb-4">Current Manual Workflow</h2>
+          <div className="space-y-4">
+            {currentWorkflow.map((step, index) => (
+              <div key={step.id} className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-red-100 rounded-full flex items-center justify-center">
+                  {step.icon}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{step.title}</h3>
+                  <p className="text-sm text-gray-600">{step.description}</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">{step.time}</span>
+                  </div>
+                </div>
+                {index < currentWorkflow.length - 1 && (
+                  <ArrowRight className="w-4 h-4 text-red-400 mt-2" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-red-100 rounded">
+            <strong>Total Time: 27 minutes per order</strong>
+          </div>
+        </div>
+
+        {/* Automated Workflow */}
+        <div className="bg-green-50 rounded-lg p-6">
+          <h2 className="text-xl font-semibold text-green-800 mb-4">Automated Workflow</h2>
+          <div className="space-y-4">
+            {automatedWorkflow.map((step, index) => (
+              <div key={step.id} className="flex items-start space-x-3">
+                <div className="flex-shrink-0 w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                  {step.icon}
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-medium text-gray-900">{step.title}</h3>
+                  <p className="text-sm text-gray-600">{step.description}</p>
+                  <p className="text-xs text-green-600 font-medium">{step.automation}</p>
+                  <div className="flex items-center space-x-2 mt-1">
+                    <Clock className="w-4 h-4 text-gray-400" />
+                    <span className="text-sm text-gray-500">{step.time}</span>
+                  </div>
+                </div>
+                {index < automatedWorkflow.length - 1 && (
+                  <ArrowRight className="w-4 h-4 text-green-400 mt-2" />
+                )}
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-green-100 rounded">
+            <strong>Total Time: 5 minutes per order</strong>
+          </div>
+        </div>
+      </div>
+
+      {/* Quick Wins */}
+      <div className="bg-blue-50 rounded-lg p-6 mb-8">
+        <h2 className="text-xl font-semibold text-blue-800 mb-4">Quick Wins - Phase 1 Implementation</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {quickWins.map((win, index) => (
+            <div key={index} className="bg-white rounded-lg p-4 border border-blue-200">
+              <h3 className="font-medium text-gray-900 mb-2">{win.title}</h3>
+              <p className="text-sm text-gray-600 mb-3">{win.description}</p>
+              <div className="flex justify-between items-center">
+                <div className="flex space-x-2">
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    win.impact === 'High' ? 'bg-green-100 text-green-800' : 'bg-yellow-100 text-yellow-800'
+                  }`}>
+                    {win.impact} Impact
+                  </span>
+                  <span className={`px-2 py-1 rounded text-xs font-medium ${
+                    win.effort === 'Low' ? 'bg-green-100 text-green-800' : 'bg-orange-100 text-orange-800'
+                  }`}>
+                    {win.effort} Effort
+                  </span>
+                </div>
+                <span className="text-sm font-medium text-blue-600">Saves {win.timesSaved}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Implementation Steps */}
+      <div className="bg-gray-50 rounded-lg p-6">
+        <h2 className="text-xl font-semibold text-gray-800 mb-4">Implementation Roadmap</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-2">Week 1: Data Flow</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Connect POS to invoice template</li>
+              <li>• Auto-populate customer data</li>
+              <li>• Create Kanban API integration</li>
+            </ul>
+          </div>
+          <div className="bg-white rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-2">Week 2: Automation</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Stripe payment links</li>
+              <li>• Email templates & triggers</li>
+              <li>• PDF auto-generation</li>
+            </ul>
+          </div>
+          <div className="bg-white rounded-lg p-4">
+            <h3 className="font-semibold text-gray-900 mb-2">Week 3: Polish</h3>
+            <ul className="text-sm text-gray-600 space-y-1">
+              <li>• Error handling</li>
+              <li>• Status tracking</li>
+              <li>• Customer notifications</li>
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default WorkflowAutomation;

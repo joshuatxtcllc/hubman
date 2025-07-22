@@ -17,11 +17,15 @@ import {
   ArrowRight,
   ExternalLink,
   Maximize2,
-  MoreHorizontal
+  MoreHorizontal,
+  Workflow,
+  Home
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import WorkflowEnhancement from '@/components/WorkflowEnhancement';
 
 const Dashboard = () => {
+  const [activeTab, setActiveTab] = useState('overview');
   const [selectedTimeRange, setSelectedTimeRange] = useState('This Month');
   const [searchQuery, setSearchQuery] = useState('');
   const [notifications, setNotifications] = useState(3);
@@ -453,7 +457,36 @@ const Dashboard = () => {
           </div>
         </div>
 
-        {/* Enhanced Metrics Cards */}
+        {/* Navigation Tabs */}
+        <div className="flex items-center space-x-1 mb-8 bg-white/70 backdrop-blur-sm rounded-2xl p-1.5 border border-white/30 shadow-lg">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === 'overview'
+                ? 'bg-gradient-to-r from-blue-600 to-blue-700 text-white shadow-lg'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Home className="w-5 h-5" />
+            <span>Dashboard Overview</span>
+          </button>
+          <button
+            onClick={() => setActiveTab('workflow')}
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === 'workflow'
+                ? 'bg-gradient-to-r from-purple-600 to-purple-700 text-white shadow-lg'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Workflow className="w-5 h-5" />
+            <span>Workflow Intelligence</span>
+          </button>
+        </div>
+
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <div>
+            {/* Enhanced Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {metrics.map((metric, index) => {
             const Icon = metric.icon;
@@ -649,6 +682,13 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+          </div>
+        )}
+
+        {/* Workflow Intelligence Tab */}
+        {activeTab === 'workflow' && (
+          <WorkflowEnhancement />
+        )}
       </main>
     </div>
   );
