@@ -20,11 +20,13 @@ import {
   MoreHorizontal,
   Workflow,
   Home,
-  Package
+  Package,
+  Phone
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import WorkflowEnhancement from '@/components/WorkflowEnhancement';
 import WholesaleResources from '@/components/WholesaleResources';
+import CommunicationCenter from '@/components/CommunicationCenter';
 
 const Dashboard = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -505,6 +507,17 @@ const Dashboard = () => {
             <Package className="w-5 h-5" />
             <span>Wholesale Resources</span>
           </button>
+          <button
+            onClick={() => setActiveTab('communication')}
+            className={`flex items-center space-x-2 px-6 py-3 rounded-xl font-medium transition-all duration-200 ${
+              activeTab === 'communication'
+                ? 'bg-gradient-to-r from-indigo-600 to-indigo-700 text-white shadow-lg'
+                : 'text-slate-600 hover:text-slate-900 hover:bg-white/50'
+            }`}
+          >
+            <Phone className="w-5 h-5" />
+            <span>Communication</span>
+          </button>
         </div>
 
         {/* Tab Content */}
@@ -717,6 +730,11 @@ const Dashboard = () => {
         {/* Wholesale Resources Tab */}
         {activeTab === 'wholesale' && (
           <WholesaleResources />
+        )}
+
+        {/* Communication Center Tab */}
+        {activeTab === 'communication' && (
+          <CommunicationCenter />
         )}
       </main>
     </div>
