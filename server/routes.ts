@@ -4,6 +4,7 @@ import { storage } from "./storage";
 import { insertCustomerSchema, insertOrderSchema, insertApplicationSchema, insertBusinessMetricSchema, insertActivitySchema } from "@shared/schema";
 import { getAllApplicationStatuses } from "./status";
 import { kanbanIntegration } from "./kanban-integration";
+import TwilioService from './twilio-service';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard data endpoints
@@ -197,6 +198,58 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(201).json(order);
     } catch (error) {
       res.status(400).json({ error: "Invalid order data" });
+    }
+  });
+
+  // Twilio Communication endpoints
+  app.get("/api/twilio/access-token", async (req, res) => {
+    try {
+      const identity = req.query.identity as string || 'jays-frames-user';
+      const token = TwilioService.generateAccessToken(identity);
+      res.json({ token });
+    } catch (error) {
+      console.error('Error generating access token:', error);
+      res.status(500).json({ error: "Failed to generate access token" });
+    }
+  });
+
+  app.post("/api/twilio/make-call", async (req, res) => {
+    try {
+      const { to, from } = req.body;
+      if (!to) {
+        return res.status(400).json({ error: "Phone number is required" });
+      }
+      
+      const call = await TwilioService.makeCall(to, from);
+      res.json({ 
+        success: true, 
+        callSid: call.sid,
+        status: call.status 
+      });
+    } catch (error) {
+      console.error('Error making call:', error);
+      res.status(500).json({ error: "Failed to make call" });
+    }
+  });
+
+  app.get("/api/twilio/call-history", async (req, res) => {
+    try {
+      const history = await TwilioService.getCallHistory();
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+      res.status(500).json({ error: "Failed to fetch call history" });
+    }
+  });
+
+  app.post("/api/twilio/voice-response", (req, res) => {
+    try {
+      const twiml = TwilioService.generateVoiceResponse();
+      res.type('text/xml');
+      res.send(twiml);
+    } catch (error) {
+      console.error('Error generating voice response:', error);
+      res.status(500).json({ error: "Failed to generate voice response" });
     }
   });
 

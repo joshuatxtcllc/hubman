@@ -1,26 +1,90 @@
 import React, { useState, useEffect } from 'react';
 import { Phone, PhoneCall, Clock, Users, History, Mic, MicOff } from 'lucide-react';
+import { Device } from '@twilio/voice-sdk';
 
 const CommunicationCenter = () => {
   const [activeCall, setActiveCall] = useState<string | null>(null);
   const [callHistory, setCallHistory] = useState<any[]>([]);
   const [quickContacts, setQuickContacts] = useState<any[]>([]);
   const [isMuted, setIsMuted] = useState(false);
+  const [device, setDevice] = useState<Device | null>(null);
+  const [isDeviceReady, setIsDeviceReady] = useState(false);
+  const [currentCall, setCurrentCall] = useState<any>(null);
 
-  // Sample quick contacts for demonstration
+  // Initialize Twilio Device and load data
   useEffect(() => {
+    // Initialize Twilio Device
+    const initializeTwilioDevice = async () => {
+      try {
+        const response = await fetch('/api/twilio/access-token?identity=jays-frames-user');
+        const { token } = await response.json();
+        
+        const twilioDevice = new Device(token, {
+          logLevel: 1,
+          answerOnBridge: true
+        });
+
+        twilioDevice.on('ready', () => {
+          console.log('Twilio Device is ready');
+          setIsDeviceReady(true);
+        });
+
+        twilioDevice.on('error', (error) => {
+          console.error('Twilio Device error:', error);
+        });
+
+        twilioDevice.on('incoming', (call) => {
+          console.log('Incoming call from:', call.parameters.From);
+          setCurrentCall(call);
+          setActiveCall(call.parameters.From);
+        });
+
+        twilioDevice.on('disconnect', () => {
+          console.log('Call disconnected');
+          setActiveCall(null);
+          setCurrentCall(null);
+          setIsMuted(false);
+          loadCallHistory(); // Refresh call history
+        });
+
+        setDevice(twilioDevice);
+      } catch (error) {
+        console.error('Failed to initialize Twilio Device:', error);
+      }
+    };
+
+    // Load call history from Twilio
+    const loadCallHistory = async () => {
+      try {
+        const response = await fetch('/api/twilio/call-history');
+        const history = await response.json();
+        setCallHistory(history.map((call: any) => ({
+          id: call.sid,
+          contact: call.to.replace('+1', ''),
+          phone: call.to,
+          duration: call.duration ? `${Math.floor(call.duration / 60)}:${(call.duration % 60).toString().padStart(2, '0')}` : '0:00',
+          time: new Date(call.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+          type: call.direction,
+          status: call.status === 'completed' ? 'completed' : 'missed'
+        })));
+      } catch (error) {
+        console.error('Failed to load call history:', error);
+      }
+    };
+
+    // Set up quick contacts
     setQuickContacts([
       {
         id: 1,
         name: "Larson Juhl Customer Service",
-        phone: "+1-800-782-8244",
+        phone: "+18007828244",
         type: "supplier",
         lastCalled: "2 days ago"
       },
       {
         id: 2,
         name: "Sarah Johnson - Custom Order",
-        phone: "+1-555-0123",
+        phone: "+15550123456",
         type: "customer",
         lastCalled: "1 hour ago",
         orderNumber: "JF-2025-001"
@@ -28,7 +92,7 @@ const CommunicationCenter = () => {
       {
         id: 3,
         name: "Mike Chen - Consultation",
-        phone: "+1-555-0456",
+        phone: "+15550456789",
         type: "customer",
         lastCalled: "Yesterday",
         orderNumber: "JF-2025-002"
@@ -36,61 +100,69 @@ const CommunicationCenter = () => {
       {
         id: 4,
         name: "United Moulding Sales",
-        phone: "+1-800-555-6789",
+        phone: "+18005556789",
         type: "supplier",
         lastCalled: "3 days ago"
       }
     ]);
 
-    setCallHistory([
-      {
-        id: 1,
-        contact: "Sarah Johnson",
-        phone: "+1-555-0123",
-        duration: "4:32",
-        time: "10:30 AM",
-        type: "outbound",
-        status: "completed"
-      },
-      {
-        id: 2,
-        contact: "Larson Juhl",
-        phone: "+1-800-782-8244",
-        duration: "2:15",
-        time: "9:45 AM",
-        type: "outbound",
-        status: "completed"
-      },
-      {
-        id: 3,
-        contact: "Mike Chen",
-        phone: "+1-555-0456",
-        duration: "0:00",
-        time: "9:15 AM",
-        type: "outbound",
-        status: "missed"
-      }
-    ]);
+    initializeTwilioDevice();
+    loadCallHistory();
   }, []);
 
-  const handleCall = (contact: any) => {
-    setActiveCall(contact.phone);
-    // In a real implementation, this would initiate the actual call
-    // using WebRTC, Twilio Voice SDK, or similar service
-    
-    // Simulate call connection
-    setTimeout(() => {
-      console.log(`Calling ${contact.name} at ${contact.phone}`);
-    }, 1000);
+  const handleCall = async (contact: any) => {
+    if (!device || !isDeviceReady) {
+      console.error('Twilio Device not ready');
+      return;
+    }
+
+    try {
+      // Make outbound call using Twilio Device
+      const call = await device.connect({
+        params: {
+          To: contact.phone
+        }
+      });
+
+      setCurrentCall(call);
+      setActiveCall(contact.phone);
+      
+      call.on('accept', () => {
+        console.log('Call accepted');
+      });
+
+      call.on('disconnect', () => {
+        console.log('Call disconnected');
+        setActiveCall(null);
+        setCurrentCall(null);
+        setIsMuted(false);
+      });
+
+      call.on('error', (error) => {
+        console.error('Call error:', error);
+        setActiveCall(null);
+        setCurrentCall(null);
+      });
+
+    } catch (error) {
+      console.error('Failed to make call:', error);
+    }
   };
 
   const handleEndCall = () => {
+    if (currentCall) {
+      currentCall.disconnect();
+    }
     setActiveCall(null);
+    setCurrentCall(null);
     setIsMuted(false);
   };
 
   const toggleMute = () => {
-    setIsMuted(!isMuted);
+    if (currentCall) {
+      currentCall.mute(!isMuted);
+      setIsMuted(!isMuted);
+    }
   };
 
   return (
@@ -102,15 +174,34 @@ const CommunicationCenter = () => {
           <p className="text-slate-600">Manage customer calls and supplier contacts</p>
         </div>
         
-        {/* Active Call Status */}
-        {activeCall && (
-          <div className="bg-green-100 border border-green-200 rounded-lg px-4 py-2">
-            <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
-              <span className="text-green-800 font-medium">Call Active</span>
-            </div>
+        {/* Device Status */}
+        <div className="flex items-center space-x-4">
+          {/* Twilio Device Status */}
+          <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${
+            isDeviceReady 
+              ? 'bg-green-100 border border-green-200' 
+              : 'bg-gray-100 border border-gray-200'
+          }`}>
+            <div className={`w-2 h-2 rounded-full ${
+              isDeviceReady ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
+            }`}></div>
+            <span className={`text-sm font-medium ${
+              isDeviceReady ? 'text-green-800' : 'text-gray-600'
+            }`}>
+              {isDeviceReady ? 'Phone Ready' : 'Connecting...'}
+            </span>
           </div>
-        )}
+
+          {/* Active Call Status */}
+          {activeCall && (
+            <div className="bg-blue-100 border border-blue-200 rounded-lg px-3 py-1">
+              <div className="flex items-center space-x-2">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+                <span className="text-blue-800 font-medium text-sm">Call Active</span>
+              </div>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Active Call Interface */}
@@ -181,8 +272,9 @@ const CommunicationCenter = () => {
                   <span className="text-xs text-slate-400">{contact.lastCalled}</span>
                   <button
                     onClick={() => handleCall(contact)}
-                    disabled={!!activeCall}
+                    disabled={!!activeCall || !isDeviceReady}
                     className="w-10 h-10 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    title={!isDeviceReady ? 'Phone system connecting...' : activeCall ? 'Call in progress' : 'Make call'}
                   >
                     <Phone className="w-4 h-4" />
                   </button>
