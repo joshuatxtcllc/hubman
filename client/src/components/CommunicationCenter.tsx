@@ -10,6 +10,9 @@ const CommunicationCenter = () => {
   const [device, setDevice] = useState<Device | null>(null);
   const [isDeviceReady, setIsDeviceReady] = useState(false);
   const [currentCall, setCurrentCall] = useState<any>(null);
+  const [isDialerOpen, setIsDialerOpen] = useState(false);
+  const [phoneNumber, setPhoneNumber] = useState('');
+  const [callStatus, setCallStatus] = useState<'ready' | 'calling' | 'connected' | 'incoming' | 'ended'>('ready');
 
   // Initialize Twilio Device and load data
   useEffect(() => {
@@ -18,7 +21,7 @@ const CommunicationCenter = () => {
       try {
         const response = await fetch('/api/twilio/access-token?identity=jays-frames-user');
         const { token } = await response.json();
-        
+
         const twilioDevice = new Device(token, {
           logLevel: 1,
           answerOnBridge: true
@@ -27,16 +30,19 @@ const CommunicationCenter = () => {
         twilioDevice.on('ready', () => {
           console.log('Twilio Device is ready');
           setIsDeviceReady(true);
+          setCallStatus('ready');
         });
 
         twilioDevice.on('error', (error) => {
           console.error('Twilio Device error:', error);
+          setCallStatus('ready');
         });
 
         twilioDevice.on('incoming', (call) => {
           console.log('Incoming call from:', call.parameters.From);
           setCurrentCall(call);
           setActiveCall(call.parameters.From);
+          setCallStatus('incoming');
         });
 
         twilioDevice.on('disconnect', () => {
@@ -45,11 +51,13 @@ const CommunicationCenter = () => {
           setCurrentCall(null);
           setIsMuted(false);
           loadCallHistory(); // Refresh call history
+          setCallStatus('ready');
         });
 
         setDevice(twilioDevice);
       } catch (error) {
         console.error('Failed to initialize Twilio Device:', error);
+        setCallStatus('ready');
       }
     };
 
@@ -65,7 +73,11 @@ const CommunicationCenter = () => {
           duration: call.duration ? `${Math.floor(call.duration / 60)}:${(call.duration % 60).toString().padStart(2, '0')}` : '0:00',
           time: new Date(call.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
           type: call.direction,
-          status: call.status === 'completed' ? 'completed' : 'missed'
+          status: call.status === 'completed' ? 'completed' : 'missed',
+          to: call.to,
+          from: call.from,
+          dateCreated: call.dateCreated,
+          direction: call.direction
         })));
       } catch (error) {
         console.error('Failed to load call history:', error);
@@ -77,14 +89,14 @@ const CommunicationCenter = () => {
       {
         id: 1,
         name: "Larson Juhl Customer Service",
-        phone: "+18007828244",
+        number: "+18007828244",
         type: "supplier",
         lastCalled: "2 days ago"
       },
       {
         id: 2,
         name: "Sarah Johnson - Custom Order",
-        phone: "+15550123456",
+        number: "+15550123456",
         type: "customer",
         lastCalled: "1 hour ago",
         orderNumber: "JF-2025-001"
@@ -92,7 +104,7 @@ const CommunicationCenter = () => {
       {
         id: 3,
         name: "Mike Chen - Consultation",
-        phone: "+15550456789",
+        number: "+15550456789",
         type: "customer",
         lastCalled: "Yesterday",
         orderNumber: "JF-2025-002"
@@ -100,7 +112,7 @@ const CommunicationCenter = () => {
       {
         id: 4,
         name: "United Moulding Sales",
-        phone: "+18005556789",
+        number: "+18005556789",
         type: "supplier",
         lastCalled: "3 days ago"
       }
@@ -126,7 +138,7 @@ const CommunicationCenter = () => {
 
       setCurrentCall(call);
       setActiveCall(contact.phone);
-      
+
       call.on('accept', () => {
         console.log('Call accepted');
       });
@@ -165,196 +177,308 @@ const CommunicationCenter = () => {
     }
   };
 
+  const formatPhoneNumber = (number: string) => {
+    const cleaned = ('' + number).replace(/\D/g, '');
+    const match = cleaned.match(/^(\d{1,3})?(\d{3})?(\d{4})$/);
+    if (match) {
+      const intlCode = (match[1] ? `+${match[1]} ` : '');
+      const areaCode = (match[2] ? `(${match[2]}) ` : '');
+      const local = match[3];
+      return intlCode + areaCode + local;
+    }
+    return number;
+  };
+
+  const handleDialerInput = (digit: string) => {
+    setPhoneNumber(phoneNumber + digit);
+  };
+
+  const clearDialer = () => {
+    setPhoneNumber('');
+  };
+
+  const makeCall = async (number: string) => {
+    if (!device || !isDeviceReady) {
+      console.error('Twilio Device not ready');
+      return;
+    }
+    setCallStatus('calling');
+
+    try {
+      const call = await device.connect({
+        params: {
+          To: number
+        }
+      });
+
+      setCurrentCall(call);
+      setActiveCall(number);
+
+      call.on('accept', () => {
+        console.log('Call accepted');
+        setCallStatus('connected');
+      });
+
+      call.on('disconnect', () => {
+        console.log('Call disconnected');
+        setActiveCall(null);
+        setCurrentCall(null);
+        setIsMuted(false);
+        setCallStatus('ready');
+        loadCallHistory();
+      });
+
+      call.on('error', (error) => {
+        console.error('Call error:', error);
+        setActiveCall(null);
+        setCurrentCall(null);
+        setCallStatus('ready');
+      });
+
+    } catch (error) {
+      console.error('Failed to make call:', error);
+      setCallStatus('ready');
+    }
+  };
+
+  const hangUpCall = () => {
+    if (currentCall) {
+      currentCall.disconnect();
+      setCallStatus('ended');
+    }
+    setActiveCall(null);
+    setCurrentCall(null);
+    setIsMuted(false);
+    setCallStatus('ready');
+  };
+
+  const answerCall = () => {
+    if (currentCall) {
+      currentCall.accept();
+      setActiveCall(currentCall.parameters.From);
+      setCallStatus('connected');
+    }
+  };
+
   return (
     <div className="space-y-6">
-      {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold text-slate-900">Communication Center</h2>
-          <p className="text-slate-600">Manage customer calls and supplier contacts</p>
-        </div>
-        
-        {/* Device Status */}
+        <h2 className="text-3xl font-bold text-slate-900">Communication Center</h2>
         <div className="flex items-center space-x-4">
-          {/* Twilio Device Status */}
-          <div className={`flex items-center space-x-2 px-3 py-1 rounded-lg ${
-            isDeviceReady 
-              ? 'bg-green-100 border border-green-200' 
-              : 'bg-gray-100 border border-gray-200'
-          }`}>
-            <div className={`w-2 h-2 rounded-full ${
-              isDeviceReady ? 'bg-green-500 animate-pulse' : 'bg-gray-400'
-            }`}></div>
-            <span className={`text-sm font-medium ${
-              isDeviceReady ? 'text-green-800' : 'text-gray-600'
-            }`}>
+          <div className="flex items-center space-x-2">
+            <div className={`w-3 h-3 rounded-full ${isDeviceReady ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+            <span className="text-sm text-slate-600 font-medium">
               {isDeviceReady ? 'Phone Ready' : 'Connecting...'}
             </span>
           </div>
+          <button 
+            onClick={() => setIsDialerOpen(!isDialerOpen)}
+            className="flex items-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-xl transition-colors"
+          >
+            <Phone className="w-4 h-4" />
+            <span>Make Call</span>
+          </button>
+        </div>
+      </div>
 
-          {/* Active Call Status */}
-          {activeCall && (
-            <div className="bg-blue-100 border border-blue-200 rounded-lg px-3 py-1">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
-                <span className="text-blue-800 font-medium text-sm">Call Active</span>
-              </div>
+      {/* Call Status Bar */}
+      <div className={`rounded-xl p-4 border-l-4 ${
+        callStatus === 'ready' ? 'bg-green-50 border-green-500' :
+        callStatus === 'calling' ? 'bg-yellow-50 border-yellow-500' :
+        callStatus === 'connected' ? 'bg-blue-50 border-blue-500' :
+        callStatus === 'incoming' ? 'bg-purple-50 border-purple-500' :
+        'bg-gray-50 border-gray-500'
+      }`}>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center space-x-3">
+            <Phone className={`w-5 h-5 ${
+              callStatus === 'ready' ? 'text-green-600' :
+              callStatus === 'calling' ? 'text-yellow-600' :
+              callStatus === 'connected' ? 'text-blue-600' :
+              callStatus === 'incoming' ? 'text-purple-600' :
+              'text-gray-600'
+            }`} />
+            <div>
+              <p className="font-semibold text-slate-900">
+                {callStatus === 'ready' ? 'Ready to make calls' :
+                 callStatus === 'calling' ? 'Calling...' :
+                 callStatus === 'connected' ? 'Call in progress' :
+                 callStatus === 'incoming' ? 'Incoming call' :
+                 'Phone system status'}
+              </p>
+              {activeCall && (
+                <p className="text-sm text-slate-600">{formatPhoneNumber(activeCall)}</p>
+              )}
+            </div>
+          </div>
+          {callStatus === 'incoming' && (
+            <div className="flex space-x-2">
+              <button 
+                onClick={answerCall}
+                className="px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors"
+              >
+                Answer
+              </button>
+              <button 
+                onClick={hangUpCall}
+                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg transition-colors"
+              >
+                Decline
+              </button>
             </div>
           )}
         </div>
       </div>
 
-      {/* Active Call Interface */}
-      {activeCall && (
-        <div className="bg-gradient-to-r from-green-500 to-green-600 rounded-2xl p-6 text-white shadow-xl">
-          <div className="text-center">
-            <div className="w-20 h-20 bg-white/20 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Phone className="w-8 h-8" />
+      {/* Active Call Controls */}
+      {(callStatus === 'connected' || callStatus === 'calling') && (
+        <div className="bg-gradient-to-r from-blue-500 to-blue-600 text-white rounded-2xl p-6 shadow-xl">
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-xl font-semibold">
+                {callStatus === 'calling' ? 'Calling...' : 'Active Call'}
+              </h3>
+              <p className="text-blue-100">{formatPhoneNumber(activeCall || '')}</p>
+              <div className="flex items-center space-x-2 mt-2">
+                <Clock className="w-4 h-4" />
+                <span className="text-sm">Call duration will show here</span>
+              </div>
             </div>
-            <h3 className="text-xl font-semibold mb-2">Connected</h3>
-            <p className="text-green-100 mb-6">{activeCall}</p>
-            
-            <div className="flex items-center justify-center space-x-4">
-              <button
+            <div className="flex items-center space-x-4">
+              <button 
                 onClick={toggleMute}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${
+                className={`p-3 rounded-full transition-colors ${
                   isMuted ? 'bg-red-500 hover:bg-red-600' : 'bg-white/20 hover:bg-white/30'
                 }`}
+                title={isMuted ? 'Unmute' : 'Mute'}
               >
                 {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
               </button>
-              
-              <button
-                onClick={handleEndCall}
-                className="w-12 h-12 bg-red-500 hover:bg-red-600 rounded-full flex items-center justify-center transition-colors"
+              <button 
+                onClick={hangUpCall}
+                className="p-3 bg-red-500 hover:bg-red-600 rounded-full transition-colors"
+                title="Hang up"
               >
-                <PhoneCall className="w-5 h-5 transform rotate-135" />
+                <PhoneCall className="w-5 h-5 rotate-135" />
               </button>
             </div>
           </div>
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Quick Contacts */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">Quick Contacts</h3>
-            <Users className="w-5 h-5 text-slate-500" />
-          </div>
-          
-          <div className="space-y-3">
-            {quickContacts.map((contact) => (
-              <div
-                key={contact.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Phone Dialer */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Phone className="w-5 h-5 mr-2 text-blue-600" />
+              Phone Dialer
+            </h3>
+
+            {/* Phone Number Display */}
+            <div className="mb-4">
+              <input 
+                type="text" 
+                value={formatPhoneNumber(phoneNumber)}
+                onChange={(e) => setPhoneNumber(e.target.value.replace(/\D/g, ''))}
+                placeholder="Enter phone number"
+                className="w-full p-3 border border-slate-300 rounded-xl text-lg text-center font-mono"
+              />
+            </div>
+
+            {/* Dial Pad */}
+            <div className="grid grid-cols-3 gap-3 mb-4">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map((digit) => (
+                <button
+                  key={digit}
+                  onClick={() => handleDialerInput(digit)}
+                  className="aspect-square bg-slate-100 hover:bg-slate-200 rounded-xl text-xl font-semibold transition-colors"
+                  disabled={callStatus !== 'ready'}
+                >
+                  {digit}
+                </button>
+              ))}
+            </div>
+
+            {/* Dial Actions */}
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => makeCall(phoneNumber.startsWith('+') ? phoneNumber : `+1${phoneNumber}`)}
+                disabled={!phoneNumber || !isDeviceReady || callStatus !== 'ready'}
+                className="flex-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-400 text-white py-3 rounded-xl font-semibold transition-colors flex items-center justify-center"
               >
-                <div className="flex-1">
-                  <div className="flex items-center space-x-3">
-                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                      contact.type === 'customer' 
-                        ? 'bg-blue-100 text-blue-600' 
-                        : 'bg-green-100 text-green-600'
-                    }`}>
-                      {contact.type === 'customer' ? '👤' : '🏢'}
-                    </div>
-                    <div>
-                      <h4 className="font-medium text-slate-900">{contact.name}</h4>
-                      <p className="text-sm text-slate-500">{contact.phone}</p>
-                      {contact.orderNumber && (
-                        <p className="text-xs text-blue-600">Order: {contact.orderNumber}</p>
-                      )}
-                    </div>
+                <PhoneCall className="w-5 h-5 mr-2" />
+                Call
+              </button>
+              <button 
+                onClick={clearDialer}
+                className="px-4 bg-slate-600 hover:bg-slate-700 text-white py-3 rounded-xl transition-colors"
+              >
+                Clear
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Contacts */}
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <Users className="w-5 h-5 mr-2 text-green-600" />
+              Quick Contacts
+            </h3>
+            <div className="space-y-3">
+              {quickContacts.map((contact, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                  <div>
+                    <p className="font-semibold text-slate-900">{contact.name}</p>
+                    <p className="text-sm text-slate-600">{contact.type}</p>
+                    <p className="text-xs text-slate-500">{formatPhoneNumber(contact.number)}</p>
                   </div>
-                </div>
-                
-                <div className="flex items-center space-x-2">
-                  <span className="text-xs text-slate-400">{contact.lastCalled}</span>
-                  <button
-                    onClick={() => handleCall(contact)}
-                    disabled={!!activeCall || !isDeviceReady}
-                    className="w-10 h-10 bg-green-100 hover:bg-green-200 text-green-600 rounded-full flex items-center justify-center transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    title={!isDeviceReady ? 'Phone system connecting...' : activeCall ? 'Call in progress' : 'Make call'}
+                  <button 
+                    onClick={() => makeCall(contact.number)}
+                    disabled={!isDeviceReady || callStatus !== 'ready'}
+                    className="p-2 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
                   >
                     <Phone className="w-4 h-4" />
                   </button>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
         </div>
 
         {/* Call History */}
-        <div className="bg-white rounded-2xl shadow-lg border border-gray-200 p-6">
-          <div className="flex items-center justify-between mb-6">
-            <h3 className="text-lg font-semibold text-slate-900">Recent Calls</h3>
-            <History className="w-5 h-5 text-slate-500" />
-          </div>
-          
-          <div className="space-y-3">
-            {callHistory.map((call) => (
-              <div
-                key={call.id}
-                className="flex items-center justify-between p-3 border border-gray-200 rounded-xl hover:bg-gray-50 transition-colors"
-              >
-                <div className="flex items-center space-x-3">
-                  <div className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    call.status === 'completed' 
-                      ? 'bg-green-100 text-green-600' 
-                      : 'bg-red-100 text-red-600'
-                  }`}>
-                    <Phone className={`w-4 h-4 ${
-                      call.type === 'outbound' ? '' : 'transform rotate-135'
-                    }`} />
+        <div className="lg:col-span-1">
+          <div className="bg-white rounded-2xl p-6 shadow-lg border border-slate-200">
+            <h3 className="text-xl font-semibold mb-4 flex items-center">
+              <History className="w-5 h-5 mr-2 text-purple-600" />
+              Recent Calls
+            </h3>
+            <div className="space-y-3">
+              {callHistory.slice(0, 6).map((call, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-slate-50 rounded-xl hover:bg-slate-100 transition-colors">
+                  <div className="flex-1">
+                    <p className="font-semibold text-slate-900">
+                      {formatPhoneNumber(call.to || call.from)}
+                    </p>
+                    <p className="text-sm text-slate-600">
+                      {call.direction === 'outbound-api' ? 'Outgoing' : 'Incoming'} • {call.status}
+                    </p>
+                    <p className="text-xs text-slate-500">
+                      {new Date(call.dateCreated).toLocaleDateString()}
+                    </p>
                   </div>
-                  <div>
-                    <h4 className="font-medium text-slate-900">{call.contact}</h4>
-                    <p className="text-sm text-slate-500">{call.phone}</p>
-                  </div>
+                  <button 
+                    onClick={() => makeCall(call.to || call.from)}
+                    disabled={!isDeviceReady || callStatus !== 'ready'}
+                    className="p-2 bg-gray-600 hover:bg-gray-700 disabled:bg-gray-400 text-white rounded-lg transition-colors"
+                  >
+                    <Phone className="w-4 h-4" />
+                  </button>
                 </div>
-                
-                <div className="text-right">
-                  <p className="text-sm font-medium text-slate-900">{call.time}</p>
-                  <p className="text-xs text-slate-500">
-                    {call.status === 'completed' ? call.duration : 'Missed'}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-          
-          <button className="w-full mt-4 py-2 text-sm text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg transition-colors">
-            View All Call History
-          </button>
-        </div>
-      </div>
-
-      {/* Integration Options */}
-      <div className="bg-gradient-to-r from-blue-50 to-indigo-50 rounded-2xl p-6 border border-blue-200">
-        <h3 className="text-lg font-semibold mb-4 text-blue-900">Communication Setup</h3>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <h4 className="font-medium text-blue-900 mb-2">WebRTC (Browser)</h4>
-            <p className="text-sm text-blue-700">Direct browser-to-browser calling without external services</p>
-            <button className="mt-3 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors">
-              Configure WebRTC
-            </button>
-          </div>
-          
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <h4 className="font-medium text-blue-900 mb-2">Twilio Voice</h4>
-            <p className="text-sm text-blue-700">Professional calling with advanced features and reliability</p>
-            <button className="mt-3 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors">
-              Setup Twilio
-            </button>
-          </div>
-          
-          <div className="bg-white rounded-xl p-4 border border-blue-100">
-            <h4 className="font-medium text-blue-900 mb-2">VoIP Integration</h4>
-            <p className="text-sm text-blue-700">Connect to existing phone system using SIP.js</p>
-            <button className="mt-3 px-4 py-2 bg-blue-100 text-blue-600 rounded-lg text-sm hover:bg-blue-200 transition-colors">
-              Connect VoIP
-            </button>
+              ))}
+            </div>
           </div>
         </div>
       </div>
