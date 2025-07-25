@@ -7,38 +7,10 @@ import { createServer } from "http";
 export async function registerRoutes(app: express.Application) {
   const server = createServer(app);
 
-  // API Routes for dashboard data
+  // API Routes for dashboard data - metrics disabled for glass morphism interface
   app.get("/api/metrics", async (req: Request, res: Response) => {
-    try {
-      const metrics = await storage.getBusinessMetrics();
-      
-      // Transform database metrics to match frontend interface
-      const transformedMetrics = metrics.map((metric, index) => ({
-        id: metric.id,
-        name: metric.name,
-        value: metric.value,
-        change: metric.change || "+0%",
-        trend: (metric.change && metric.change.startsWith('+')) ? 'up' : 'down'
-      }));
-
-      // Add some default metrics if none exist
-      if (transformedMetrics.length === 0) {
-        const defaultMetrics = [
-          { id: 1, name: "Monthly Revenue", value: "$45,231", change: "+20.1%", trend: "up" },
-          { id: 2, name: "Orders Processed", value: "1,234", change: "+15.3%", trend: "up" },
-          { id: 3, name: "Completion Rate", value: "98.2%", change: "+2.4%", trend: "up" },
-          { id: 4, name: "Growth Rate", value: "12.5%", change: "+1.2%", trend: "up" },
-          { id: 5, name: "Active Customers", value: "543", change: "+8.1%", trend: "up" },
-          { id: 6, name: "Inventory Items", value: "2,847", change: "-3.2%", trend: "down" }
-        ];
-        return res.json(defaultMetrics);
-      }
-
-      res.json(transformedMetrics);
-    } catch (error) {
-      console.error("Error fetching metrics:", error);
-      res.status(500).json({ message: "Failed to fetch metrics" });
-    }
+    // Return empty array since we're not using traditional metrics in the glass design
+    res.json([]);
   });
 
   app.get("/api/applications", async (req: Request, res: Response) => {
