@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Phone, PhoneCall, Clock, Users, History, Mic, MicOff } from 'lucide-react';
 import { Device } from '@twilio/voice-sdk';
 
@@ -31,8 +31,7 @@ const CommunicationCenter = () => {
 
         const twilioDevice = new Device(token, {
           logLevel: 1,
-          answerOnBridge: true,
-          codecPreferences: ['opus', 'pcmu']
+          answerOnBridge: true
         });
 
         twilioDevice.on('ready', () => {
@@ -253,7 +252,6 @@ const CommunicationCenter = () => {
         setCurrentCall(null);
         setIsMuted(false);
         setCallStatus('ready');
-        loadCallHistory();
       });
 
       call.on('error', (error) => {

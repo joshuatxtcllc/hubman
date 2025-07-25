@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { ExternalLink, Download, Search, DollarSign, Package, Truck } from 'lucide-react';
 
 const WholesaleResources = () => {
