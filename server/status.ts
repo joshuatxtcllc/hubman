@@ -9,11 +9,11 @@ export interface ApplicationStatus {
 }
 
 const applications = [
-  { id: 1, name: "Frame Assistant", url: "https://jays-frames-assistant-JayFrames.replit.app" },
+  { id: 1, name: "Main Website", url: "https://frame-houston-JayFrames.replit.app" },
   { id: 2, name: "Virtual Designer", url: "https://jays-frames-ai-JayFrames.replit.app" },
   { id: 3, name: "Kanban Production", url: "https://kanbanmain-JayFrames.replit.app" },
   { id: 4, name: "Enterprise CRM", url: "https://enterprise-intelligence-JayFrames.replit.app" },
-  { id: 5, name: "POS System", url: "https://therealposmain-JayFrames.replit.app" },
+  { id: 5, name: "POS System", url: "https://frame-craft-pro-JayFrames.replit.app" },
   { id: 6, name: "Business Listing Analyzer", url: "https://business-listing-analyzer-JayFrames.replit.app" },
   { id: 7, name: "Larson Juhl Designer", url: "https://shop.larsonjuhl.com/en-US/lj-design-studio?customizable=#maincontent" }
 ];

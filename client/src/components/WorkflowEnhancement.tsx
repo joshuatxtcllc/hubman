@@ -71,7 +71,7 @@ const WorkflowEnhancement = () => {
       description: "Use POS System to calculate frame pricing",
       icon: <Calculator className="w-5 h-5" />,
       appName: "POS System",
-      url: "https://therealposmain-JayFrames.replit.app",
+      url: "https://frame-craft-pro-JayFrames.replit.app",
       action: "Calculate order pricing and get customer details",
       dataNeeded: ["Customer info", "Frame dimensions", "Materials"],
       dataProvided: ["Total price", "Materials list", "Customer data"],
