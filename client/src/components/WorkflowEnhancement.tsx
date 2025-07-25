@@ -131,7 +131,7 @@ const WorkflowEnhancement = () => {
       description: "Add order to Kanban for production tracking",
       icon: <Clipboard className="w-5 h-5" />,
       appName: "Kanban Board",
-      url: "https://4ac71b60-f981-4aba-8f8c-73dde0fc14da-00-3gz99m4rduv0e.kirk.replit.dev/kanban",
+      url: "https://kanbanmain-JayFrames.replit.app",
       action: "Create production tracking card with all order details",
       dataNeeded: ["Complete order data", "Materials list", "Timeline"],
       dataProvided: ["Production card", "Status tracking"],
@@ -181,9 +181,9 @@ const WorkflowEnhancement = () => {
   const startNewWorkflow = (templateId = 'standard') => {
     const template = workflowTemplates.find(t => t.id === templateId);
     if (!template) return;
-
+    
     const workflowId = `WF-${Date.now()}`;
-
+    
     setActiveWorkflow(workflowId);
     setCurrentStep(0);
     setOrderData({
@@ -203,7 +203,7 @@ const WorkflowEnhancement = () => {
         data: data
       }
     }));
-
+    
     // Move to next step
     const currentSteps = orderData.steps || workflowSteps;
     const nextStepIndex = currentSteps.findIndex(s => s.id === stepId);
@@ -221,7 +221,7 @@ const WorkflowEnhancement = () => {
       completedAt: new Date().toISOString(),
       status: 'completed'
     }]);
-
+    
     setActiveWorkflow(null);
     setCurrentStep(0);
     setOrderData({});
@@ -250,14 +250,14 @@ Jay's Frames Team
 
 ---
 This email was sent from the Jay's Frames Command Center`;
-
+        
         const mailtoLink = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.open(mailtoLink);
       }
     } else {
       window.open(url, '_blank');
     }
-
+    
     // Mark step as active but don't auto-complete
     const currentSteps = orderData.steps || workflowSteps;
     const stepIndex = currentSteps.findIndex(s => s.id === stepId);
@@ -330,7 +330,7 @@ This email was sent from the Jay's Frames Command Center`;
           <div className="text-sm text-gray-600">
             Step {currentStep + 1} of {(orderData.steps || workflowSteps).length}: {getCurrentStep()?.title}
           </div>
-
+          
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="bg-gray-200 rounded-full h-2">
@@ -362,7 +362,7 @@ This email was sent from the Jay's Frames Command Center`;
                   <p className="text-gray-600">{getCurrentStep()?.description}</p>
                 </div>
               </div>
-
+              
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <h4 className="font-medium text-blue-900 mb-2">Action Required:</h4>
@@ -402,7 +402,7 @@ This email was sent from the Jay's Frames Command Center`;
               </div>
             </div>
           </div>
-
+          
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Clock className="w-4 h-4" />
@@ -474,7 +474,7 @@ This email was sent from the Jay's Frames Command Center`;
               <strong>Mac Tip:</strong> Keep this folder open in a browser tab during workflow for direct drag-and-drop.
             </p>
           </div>
-
+          
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">📋 Kanban Integration</h4>
             <p className="text-sm text-purple-700 mb-2">Production tracking steps:</p>
@@ -486,7 +486,7 @@ This email was sent from the Jay's Frames Command Center`;
               <li>5. Set due date and priority</li>
             </ol>
           </div>
-
+          
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">📧 Email Automation</h4>
             <p className="text-sm text-purple-700 mb-2">Auto-generated email includes:</p>
@@ -501,7 +501,7 @@ This email was sent from the Jay's Frames Command Center`;
               <strong>Note:</strong> You'll need to manually attach the invoice PDF from your downloads.
             </p>
           </div>
-
+          
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">🎯 Professional Design</h4>
             <p className="text-sm text-purple-700 mb-2">Larson Juhl Designer Tool:</p>
