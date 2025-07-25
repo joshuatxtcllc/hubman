@@ -131,7 +131,7 @@ const WorkflowEnhancement = () => {
       description: "Add order to Kanban for production tracking",
       icon: <Clipboard className="w-5 h-5" />,
       appName: "Kanban Board",
-      url: "https://4ac71b60-f981-4aba-8f8c-73dde0fc14da-00-3gz99m4rduv0e.kirk.replit.dev/kanban",
+      url: "https://framecraftpro.com/kanban",
       action: "Create production tracking card with all order details",
       dataNeeded: ["Complete order data", "Materials list", "Timeline"],
       dataProvided: ["Production card", "Status tracking"],
