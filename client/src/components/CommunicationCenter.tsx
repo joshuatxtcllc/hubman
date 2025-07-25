@@ -30,8 +30,7 @@ const CommunicationCenter = () => {
         }
 
         const twilioDevice = new Device(token, {
-          logLevel: 1,
-          answerOnBridge: true
+          logLevel: 1
         });
 
         twilioDevice.on('ready', () => {
