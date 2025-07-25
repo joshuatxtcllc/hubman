@@ -4,7 +4,8 @@ import { storage } from "./storage";
 import { insertCustomerSchema, insertOrderSchema, insertApplicationSchema, insertBusinessMetricSchema, insertActivitySchema } from "@shared/schema";
 import { getAllApplicationStatuses } from "./status";
 import { kanbanIntegration } from "./kanban-integration";
-import TwilioService from './twilio-service';
+import { TwilioService } from './twilio-service';
+import VoiceResponse from 'twilio/lib/twiml/VoiceResponse';
 
 export async function registerRoutes(app: Express): Promise<Server> {
   // Dashboard data endpoints
@@ -201,25 +202,55 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
 
-  // Twilio Communication endpoints
-  app.get("/api/twilio/access-token", async (req, res) => {
+  // Twilio Voice routes
+  app.get('/api/twilio/access-token', (req, res) => {
     try {
       const identity = req.query.identity as string || 'jays-frames-user';
+      console.log('Generating access token for identity:', identity);
       const token = TwilioService.generateAccessToken(identity);
       res.json({ token });
     } catch (error) {
       console.error('Error generating access token:', error);
-      res.status(500).json({ error: "Failed to generate access token" });
+      res.status(500).json({ 
+        error: 'Failed to generate access token',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
-  app.post("/api/twilio/make-call", async (req, res) => {
+  app.get('/api/twilio/call-history', async (req, res) => {
+    try {
+      const history = await TwilioService.getCallHistory();
+      res.json(history);
+    } catch (error) {
+      console.error('Error fetching call history:', error);
+      res.status(500).json({ error: 'Failed to fetch call history' });
+    }
+  });
+
+  app.post('/api/twilio/voice-response', (req, res) => {
+    try {
+      const twiml = new VoiceResponse();
+
+      // Simple voice response for outbound calls
+      twiml.say({
+        voice: 'alice'
+      }, 'Hello, you have reached Jay\'s Frames. Please hold while we connect you.');
+
+      // For incoming calls, you might want to dial a specific number
+      // twiml.dial('+1234567890'); // Replace with your business number
+
+      res.type('text/xml');
+      res.send(twiml.toString());
+    } catch (error) {
+      console.error('Error generating TwiML response:', error);
+      res.status(500).json({ error: 'Failed to generate voice response' });
+    }
+  });
+
+  app.post('/api/twilio/make-call', async (req, res) => {
     try {
       const { to, from } = req.body;
-      if (!to) {
-        return res.status(400).json({ error: "Phone number is required" });
-      }
-      
       const call = await TwilioService.makeCall(to, from);
       res.json({ 
         success: true, 
@@ -228,28 +259,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
       });
     } catch (error) {
       console.error('Error making call:', error);
-      res.status(500).json({ error: "Failed to make call" });
-    }
-  });
-
-  app.get("/api/twilio/call-history", async (req, res) => {
-    try {
-      const history = await TwilioService.getCallHistory();
-      res.json(history);
-    } catch (error) {
-      console.error('Error fetching call history:', error);
-      res.status(500).json({ error: "Failed to fetch call history" });
-    }
-  });
-
-  app.post("/api/twilio/voice-response", (req, res) => {
-    try {
-      const twiml = TwilioService.generateVoiceResponse();
-      res.type('text/xml');
-      res.send(twiml);
-    } catch (error) {
-      console.error('Error generating voice response:', error);
-      res.status(500).json({ error: "Failed to generate voice response" });
+      res.status(500).json({ 
+        error: 'Failed to make call',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 

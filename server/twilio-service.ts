@@ -4,8 +4,19 @@ const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_PHONE_NUMBER;
 
+console.log('Twilio configuration check:');
+console.log('- Account SID:', accountSid ? 'Set' : 'Missing');
+console.log('- Auth Token:', authToken ? 'Set' : 'Missing');
+console.log('- Phone Number:', twilioPhoneNumber ? 'Set' : 'Missing');
+console.log('- TwiML App SID:', process.env.TWILIO_TWIML_APP_SID ? 'Set' : 'Not set (optional)');
+
 if (!accountSid || !authToken || !twilioPhoneNumber) {
-  throw new Error('Missing required Twilio environment variables');
+  const missing = [];
+  if (!accountSid) missing.push('TWILIO_ACCOUNT_SID');
+  if (!authToken) missing.push('TWILIO_AUTH_TOKEN');
+  if (!twilioPhoneNumber) missing.push('TWILIO_PHONE_NUMBER');
+  
+  throw new Error(`Missing required Twilio environment variables: ${missing.join(', ')}`);
 }
 
 const client = twilio(accountSid, authToken);
@@ -16,21 +27,27 @@ export class TwilioService {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Use API key if available, otherwise use account SID
-    const apiKey = process.env.TWILIO_API_KEY || accountSid;
-    const apiSecret = process.env.TWILIO_API_SECRET || authToken;
+    // For Twilio Voice, we need to use Account SID and Auth Token
+    // API Key/Secret are optional for enhanced security but not required
+    const accessToken = new AccessToken(
+      accountSid,
+      accountSid, // Use Account SID as API Key if no separate API key
+      authToken,  // Use Auth Token as API Secret if no separate API secret
+      {
+        identity: identity,
+        ttl: 3600 // 1 hour
+      }
+    );
 
-    const accessToken = new AccessToken(accountSid, apiKey, apiSecret, {
-      identity: identity,
-      ttl: 3600 // 1 hour
-    });
-
+    // Create voice grant - outgoing calls don't require TwiML app if using default behavior
     const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
+      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID || undefined,
       incomingAllow: true
     });
 
     accessToken.addGrant(voiceGrant);
+    
+    console.log('Generated access token for identity:', identity);
     return accessToken.toJwt();
   }
 
