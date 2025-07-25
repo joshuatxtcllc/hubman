@@ -13,7 +13,7 @@ Preferred communication style: Simple, everyday language.
 ### Workflow Intelligence Integration
 - Added comprehensive workflow automation system for order processing
 - Integrated 7-step guided workflow: POS calculation → Invoice generation → Payment processing → Email automation → Google Drive storage → Kanban production tracking → Customer communication
-- Connected real business app URLs including new POS system (https://frame-craft-pro-JayFrames.replit.app), main website (https://frame-houston-JayFrames.replit.app), Kanban board, and Google Drive folder
+- Connected real business app URLs including new POS system (https://framecraftpro.com/orders), Kanban board (https://framecraftpro.com/kanban), AI Assistant (https://framecraftpro.com/ai-assistant), main website (https://frame-houston-JayFrames.replit.app), and Google Drive folder
 - Added Mac-specific optimization tips for file handling and drag-and-drop operations
 - Implemented automated email generation with professional messaging and order details
 - Reduced total order processing time from 27 minutes to 10 minutes through streamlined workflow

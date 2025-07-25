@@ -66,9 +66,10 @@ const Dashboard: React.FC = () => {
         ]);
         
         setApplications([
-          { id: 1, name: 'POS System', description: 'Point of Sale', status: 'active', url: 'https://frame-craft-pro-JayFrames.replit.app', lastUpdated: '2 min ago' },
-          { id: 2, name: 'Kanban Board', description: 'Production Tracking', status: 'active', url: 'https://kanbanmain-JayFrames.replit.app', lastUpdated: '5 min ago' },
-          { id: 3, name: 'Main Website', description: 'Customer Portal', status: 'active', url: 'https://frame-houston-JayFrames.replit.app', lastUpdated: '1 hour ago' }
+          { id: 1, name: 'POS System', description: 'Point of Sale', status: 'active', url: 'https://framecraftpro.com/orders', lastUpdated: '2 min ago' },
+          { id: 2, name: 'Kanban Board', description: 'Production Tracking', status: 'active', url: 'https://framecraftpro.com/kanban', lastUpdated: '5 min ago' },
+          { id: 3, name: 'AI Assistant', description: 'Business Intelligence', status: 'active', url: 'https://framecraftpro.com/ai-assistant', lastUpdated: '1 hour ago' },
+          { id: 4, name: 'Main Website', description: 'Customer Portal', status: 'active', url: 'https://frame-houston-JayFrames.replit.app', lastUpdated: '1 hour ago' }
         ]);
         
         setActivities([
