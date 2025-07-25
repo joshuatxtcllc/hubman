@@ -20,11 +20,19 @@ const CommunicationCenter = () => {
     const initializeTwilioDevice = async () => {
       try {
         const response = await fetch('/api/twilio/access-token?identity=jays-frames-user');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const { token } = await response.json();
+
+        if (!token) {
+          throw new Error('No access token received');
+        }
 
         const twilioDevice = new Device(token, {
           logLevel: 1,
-          answerOnBridge: true
+          answerOnBridge: true,
+          codecPreferences: ['opus', 'pcmu']
         });
 
         twilioDevice.on('ready', () => {
@@ -35,7 +43,13 @@ const CommunicationCenter = () => {
 
         twilioDevice.on('error', (error) => {
           console.error('Twilio Device error:', error);
+          setIsDeviceReady(false);
           setCallStatus('ready');
+        });
+
+        twilioDevice.on('offline', () => {
+          console.log('Twilio Device is offline');
+          setIsDeviceReady(false);
         });
 
         twilioDevice.on('incoming', (call) => {
@@ -54,9 +68,13 @@ const CommunicationCenter = () => {
           setCallStatus('ready');
         });
 
+        // Register the device
+        await twilioDevice.register();
         setDevice(twilioDevice);
+
       } catch (error) {
         console.error('Failed to initialize Twilio Device:', error);
+        setIsDeviceReady(false);
         setCallStatus('ready');
       }
     };
@@ -200,19 +218,29 @@ const CommunicationCenter = () => {
   const makeCall = async (number: string) => {
     if (!device || !isDeviceReady) {
       console.error('Twilio Device not ready');
+      alert('Phone system not ready. Please wait for connection.');
       return;
     }
+
+    // Clean the phone number
+    const cleanNumber = number.replace(/\D/g, '');
+    if (cleanNumber.length < 10) {
+      alert('Please enter a valid phone number');
+      return;
+    }
+
+    const formattedNumber = cleanNumber.startsWith('1') ? `+${cleanNumber}` : `+1${cleanNumber}`;
     setCallStatus('calling');
 
     try {
       const call = await device.connect({
         params: {
-          To: number
+          To: formattedNumber
         }
       });
 
       setCurrentCall(call);
-      setActiveCall(number);
+      setActiveCall(formattedNumber);
 
       call.on('accept', () => {
         console.log('Call accepted');
@@ -233,11 +261,20 @@ const CommunicationCenter = () => {
         setActiveCall(null);
         setCurrentCall(null);
         setCallStatus('ready');
+        alert('Call failed: ' + error.message);
+      });
+
+      call.on('cancel', () => {
+        console.log('Call was cancelled');
+        setActiveCall(null);
+        setCurrentCall(null);
+        setCallStatus('ready');
       });
 
     } catch (error) {
       console.error('Failed to make call:', error);
       setCallStatus('ready');
+      alert('Failed to make call: ' + (error as Error).message);
     }
   };
 

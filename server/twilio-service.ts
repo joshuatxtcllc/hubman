@@ -16,7 +16,11 @@ export class TwilioService {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    const accessToken = new AccessToken(accountSid, process.env.TWILIO_API_KEY || accountSid, authToken, {
+    // Use API key if available, otherwise use account SID
+    const apiKey = process.env.TWILIO_API_KEY || accountSid;
+    const apiSecret = process.env.TWILIO_API_SECRET || authToken;
+
+    const accessToken = new AccessToken(accountSid, apiKey, apiSecret, {
       identity: identity,
       ttl: 3600 // 1 hour
     });
