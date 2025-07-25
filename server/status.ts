@@ -22,11 +22,15 @@ export async function checkApplicationStatus(url: string): Promise<{ status: str
   const startTime = Date.now();
   
   try {
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
     const response = await fetch(url, { 
       method: 'HEAD',
-      timeout: 10000 // 10 second timeout
+      signal: controller.signal
     });
     
+    clearTimeout(timeoutId);
     const responseTime = Date.now() - startTime;
     
     return {

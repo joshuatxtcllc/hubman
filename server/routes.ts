@@ -1,8 +1,9 @@
 
 import { Express } from "express";
 import { createServer } from "http";
-import { db } from "@/server/db";
-import { applications, businessMetrics, activities } from "@/shared/schema";
+import { eq } from "drizzle-orm";
+import { db } from "./db";
+import { applications, businessMetrics, activities } from "@shared/schema";
 import { checkApplicationStatus } from "./status";
 
 export function registerRoutes(app: Express) {
