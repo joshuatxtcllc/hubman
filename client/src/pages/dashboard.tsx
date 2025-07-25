@@ -152,7 +152,7 @@ const Dashboard = () => {
       icon: "🏪",
       gradient: "from-blue-500 to-blue-600",
       priority: "high",
-      url: "https://therealposmain-JayFrames.replit.app"
+      url: "https://frame-craft-pro-JayFrames.replit.app"
     },
     {
       title: "Frame Designer",
