@@ -3,6 +3,7 @@ import { storage } from "./storage";
 import { insertBusinessMetricSchema, insertApplicationSchema, insertActivitySchema } from "@shared/schema";
 import { getAllApplicationStatuses } from "./status";
 import { createServer } from "http";
+import { TwilioService } from "./twilio-service";
 
 export async function registerRoutes(app: express.Application) {
   const server = createServer(app);
@@ -173,6 +174,50 @@ export async function registerRoutes(app: express.Application) {
     } catch (error) {
       console.error("Error creating activity:", error);
       res.status(400).json({ message: "Invalid activity data" });
+    }
+  });
+
+  // Twilio Voice API routes
+  app.get("/api/twilio/access-token", async (req: Request, res: Response) => {
+    try {
+      const identity = req.query.identity as string || 'default-user';
+      const token = TwilioService.generateAccessToken(identity);
+      res.json({ token });
+    } catch (error) {
+      console.error("Error generating access token:", error);
+      res.status(500).json({ message: "Failed to generate access token" });
+    }
+  });
+
+  app.get("/api/twilio/call-history", async (req: Request, res: Response) => {
+    try {
+      const history = await TwilioService.getCallHistory();
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching call history:", error);
+      res.status(500).json({ message: "Failed to fetch call history" });
+    }
+  });
+
+  app.post("/api/twilio/make-call", async (req: Request, res: Response) => {
+    try {
+      const { to, from } = req.body;
+      const call = await TwilioService.makeCall(to, from);
+      res.json(call);
+    } catch (error) {
+      console.error("Error making call:", error);
+      res.status(500).json({ message: "Failed to make call" });
+    }
+  });
+
+  app.post("/api/twilio/voice-response", async (req: Request, res: Response) => {
+    try {
+      const twiml = TwilioService.generateVoiceResponse();
+      res.type('text/xml');
+      res.send(twiml);
+    } catch (error) {
+      console.error("Error generating voice response:", error);
+      res.status(500).json({ message: "Failed to generate voice response" });
     }
   });
 
