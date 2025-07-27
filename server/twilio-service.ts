@@ -27,28 +27,29 @@ export class TwilioService {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // For Twilio Voice, we need to use Account SID and Auth Token
-    // API Key/Secret are optional for enhanced security but not required
+    // Create access token with proper configuration
     const accessToken = new AccessToken(
-      accountSid,
-      accountSid, // Use Account SID as API Key if no separate API key
-      authToken,  // Use Auth Token as API Secret if no separate API secret
+      accountSid!,
+      accountSid!, // Use Account SID as API Key
+      authToken!,  // Use Auth Token as API Secret
       {
         identity: identity,
         ttl: 3600 // 1 hour
       }
     );
 
-    // Create voice grant - outgoing calls don't require TwiML app if using default behavior
+    // Create voice grant with proper configuration
     const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID || undefined,
+      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
       incomingAllow: true
     });
 
     accessToken.addGrant(voiceGrant);
     
+    const token = accessToken.toJwt();
     console.log('Generated access token for identity:', identity);
-    return accessToken.toJwt();
+    console.log('Token preview:', token.substring(0, 50) + '...');
+    return token;
   }
 
   // Make outbound call

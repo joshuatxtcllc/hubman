@@ -17,7 +17,7 @@ export async function registerRoutes(app: express.Application) {
   app.get("/api/applications", async (req: Request, res: Response) => {
     try {
       const applications = await storage.getApplications();
-      
+
       // Transform database applications to match frontend interface
       const transformedApplications = applications.map(app => ({
         id: app.id,
@@ -77,7 +77,7 @@ export async function registerRoutes(app: express.Application) {
   app.get("/api/activities", async (req: Request, res: Response) => {
     try {
       const activities = await storage.getActivities(20);
-      
+
       // Transform database activities to match frontend interface
       const transformedActivities = activities.map(activity => ({
         id: activity.id,
@@ -180,12 +180,28 @@ export async function registerRoutes(app: express.Application) {
   // Twilio Voice API routes
   app.get("/api/twilio/access-token", async (req: Request, res: Response) => {
     try {
-      const identity = req.query.identity as string || 'default-user';
+      const identity = (req.query.identity as string) || 'jays-frames-user';
+
+      // Validate Twilio credentials
+      if (!process.env.TWILIO_ACCOUNT_SID || !process.env.TWILIO_AUTH_TOKEN) {
+        return res.status(500).json({
+          error: 'Missing Twilio credentials',
+          message: 'TWILIO_ACCOUNT_SID or TWILIO_AUTH_TOKEN environment variables are not set.'
+        });
+      }
+
       const token = TwilioService.generateAccessToken(identity);
-      res.json({ token });
+      res.json({
+        token,
+        identity,
+        success: true
+      });
     } catch (error) {
       console.error("Error generating access token:", error);
-      res.status(500).json({ message: "Failed to generate access token" });
+      res.status(500).json({
+        error: 'Failed to generate access token',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
     }
   });
 
@@ -268,7 +284,7 @@ export async function registerRoutes(app: express.Application) {
     try {
       const orderNumber = req.params.orderNumber;
       const order = await storage.getOrderByNumber(orderNumber);
-      
+
       if (!order) {
         res.status(404).json({ error: 'Order not found' });
         return;

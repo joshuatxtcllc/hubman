@@ -19,18 +19,23 @@ const CommunicationCenter = () => {
     // Initialize Twilio Device
     const initializeTwilioDevice = async () => {
       try {
+        console.log('Initializing Twilio Device...');
         const response = await fetch('/api/twilio/access-token?identity=jays-frames-user');
+        
         if (!response.ok) {
           throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const { token } = await response.json();
-
-        if (!token) {
+        
+        const responseData = await response.json();
+        console.log('Token response:', responseData);
+        
+        if (!responseData.token) {
           throw new Error('No access token received');
         }
 
-        const twilioDevice = new Device(token, {
-          logLevel: 1
+        const twilioDevice = new Device(responseData.token, {
+          logLevel: 1,
+          codecPreferences: ['opus', 'pcmu']
         });
 
         twilioDevice.on('ready', () => {
@@ -81,22 +86,46 @@ const CommunicationCenter = () => {
     const loadCallHistory = async () => {
       try {
         const response = await fetch('/api/twilio/call-history');
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
         const history = await response.json();
-        setCallHistory(history.map((call: any) => ({
-          id: call.sid,
-          contact: call.to.replace('+1', ''),
-          phone: call.to,
-          duration: call.duration ? `${Math.floor(call.duration / 60)}:${(call.duration % 60).toString().padStart(2, '0')}` : '0:00',
-          time: new Date(call.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          type: call.direction,
-          status: call.status === 'completed' ? 'completed' : 'missed',
-          to: call.to,
-          from: call.from,
-          dateCreated: call.dateCreated,
-          direction: call.direction
-        })));
+        
+        setCallHistory(history.map((call: any) => {
+          // Handle date formatting safely
+          let formattedDate = 'Unknown date';
+          let formattedTime = 'Unknown time';
+          
+          try {
+            if (call.dateCreated) {
+              const date = new Date(call.dateCreated);
+              if (!isNaN(date.getTime())) {
+                formattedDate = date.toLocaleDateString();
+                formattedTime = date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+              }
+            }
+          } catch (dateError) {
+            console.warn('Date parsing error for call:', call.sid, dateError);
+          }
+          
+          return {
+            id: call.sid,
+            contact: call.to ? call.to.replace('+1', '') : call.from?.replace('+1', '') || 'Unknown',
+            phone: call.to || call.from || 'Unknown',
+            duration: call.duration ? `${Math.floor(call.duration / 60)}:${(call.duration % 60).toString().padStart(2, '0')}` : '0:00',
+            time: formattedTime,
+            type: call.direction,
+            status: call.status === 'completed' ? 'completed' : (call.status || 'unknown'),
+            to: call.to,
+            from: call.from,
+            dateCreated: formattedDate,
+            direction: call.direction
+          };
+        }));
       } catch (error) {
         console.error('Failed to load call history:', error);
+        // Set empty array on error
+        setCallHistory([]);
       }
     };
 
@@ -106,6 +135,7 @@ const CommunicationCenter = () => {
         id: 1,
         name: "Larson Juhl Customer Service",
         number: "+18007828244",
+        phone: "+18007828244",
         type: "supplier",
         lastCalled: "2 days ago"
       },
@@ -113,6 +143,7 @@ const CommunicationCenter = () => {
         id: 2,
         name: "Sarah Johnson - Custom Order",
         number: "+15550123456",
+        phone: "+15550123456",
         type: "customer",
         lastCalled: "1 hour ago",
         orderNumber: "JF-2025-001"
@@ -121,6 +152,7 @@ const CommunicationCenter = () => {
         id: 3,
         name: "Mike Chen - Consultation",
         number: "+15550456789",
+        phone: "+15550456789",
         type: "customer",
         lastCalled: "Yesterday",
         orderNumber: "JF-2025-002"
@@ -129,6 +161,7 @@ const CommunicationCenter = () => {
         id: 4,
         name: "United Moulding Sales",
         number: "+18005556789",
+        phone: "+18005556789",
         type: "supplier",
         lastCalled: "3 days ago"
       }
@@ -223,11 +256,21 @@ const CommunicationCenter = () => {
     // Clean the phone number
     const cleanNumber = number.replace(/\D/g, '');
     if (cleanNumber.length < 10) {
-      alert('Please enter a valid phone number');
+      alert('Please enter a valid phone number (at least 10 digits)');
       return;
     }
 
-    const formattedNumber = cleanNumber.startsWith('1') ? `+${cleanNumber}` : `+1${cleanNumber}`;
+    // Format number properly
+    let formattedNumber;
+    if (cleanNumber.startsWith('1') && cleanNumber.length === 11) {
+      formattedNumber = `+${cleanNumber}`;
+    } else if (cleanNumber.length === 10) {
+      formattedNumber = `+1${cleanNumber}`;
+    } else {
+      formattedNumber = `+${cleanNumber}`;
+    }
+    
+    console.log('Making call to:', formattedNumber);
     setCallStatus('calling');
 
     try {
@@ -500,7 +543,7 @@ const CommunicationCenter = () => {
                       {call.direction === 'outbound-api' ? 'Outgoing' : 'Incoming'} • {call.status}
                     </p>
                     <p className="text-xs text-slate-500">
-                      {new Date(call.dateCreated).toLocaleDateString()}
+                      {call.dateCreated}
                     </p>
                   </div>
                   <button 
