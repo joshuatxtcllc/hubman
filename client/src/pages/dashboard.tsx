@@ -11,11 +11,19 @@ import {
   TrendingUp,
   Activity,
   Clock,
-  Zap
+  Zap,
+  Phone,
+  Menu,
+  X
 } from 'lucide-react';
+import CommunicationCenter from '../components/CommunicationCenter';
+import { useIsMobile } from '../hooks/use-mobile';
 
 const Dashboard = () => {
   const [selectedTimeRange, setSelectedTimeRange] = useState('This Month');
+  const [activeTab, setActiveTab] = useState('overview');
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const isMobile = useIsMobile();
 
   // Enhanced metrics with trends
   const metrics = [
@@ -178,6 +186,14 @@ const Dashboard = () => {
           </div>
 
           <div className="flex items-center space-x-4">
+            {/* Mobile Menu Toggle */}
+            <button 
+              onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+              className="md:hidden p-2 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-colors"
+            >
+              {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
+
             <div className="relative">
               <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
               <input 
@@ -197,27 +213,159 @@ const Dashboard = () => {
         </div>
       </header>
 
-      {/* Main Content */}
-      <main className="px-6 py-6 max-w-7xl mx-auto">
-        {/* Welcome Section with Time Filter */}
-        <div className="flex items-center justify-between mb-8">
-          <div>
-            <h2 className="text-3xl font-bold text-gray-900 mb-2">Good morning, Jay! 👋</h2>
-            <p className="text-gray-600">Here's what's happening with your business today</p>
-          </div>
-          <div className="flex items-center space-x-2">
-            <select 
-              value={selectedTimeRange}
-              onChange={(e) => setSelectedTimeRange(e.target.value)}
-              className="border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            >
-              <option>Today</option>
-              <option>This Week</option>
-              <option>This Month</option>
-              <option>This Quarter</option>
-            </select>
+      {/* Mobile Navigation Menu */}
+      {isMobileMenuOpen && isMobile && (
+        <div className="fixed inset-0 z-50 bg-black bg-opacity-50 md:hidden">
+          <div className="fixed left-0 top-0 h-full w-80 bg-white shadow-xl transform transition-transform">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-8">
+                <h2 className="text-xl font-bold text-gray-900">Navigation</h2>
+                <button 
+                  onClick={() => setIsMobileMenuOpen(false)}
+                  className="p-2 text-gray-400 hover:text-gray-600"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              
+              <nav className="space-y-2">
+                <button 
+                  onClick={() => {
+                    setActiveTab('overview');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    activeTab === 'overview' 
+                      ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Activity className="w-5 h-5" />
+                  <span className="font-medium">Overview</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setActiveTab('communication');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    activeTab === 'communication' 
+                      ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Phone className="w-5 h-5" />
+                  <span className="font-medium">Communication Center</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setActiveTab('orders');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    activeTab === 'orders' 
+                      ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <ShoppingCart className="w-5 h-5" />
+                  <span className="font-medium">Orders</span>
+                </button>
+                
+                <button 
+                  onClick={() => {
+                    setActiveTab('wholesale');
+                    setIsMobileMenuOpen(false);
+                  }}
+                  className={`w-full flex items-center space-x-3 px-4 py-3 rounded-xl text-left transition-colors ${
+                    activeTab === 'wholesale' 
+                      ? 'bg-blue-50 text-blue-600 border-2 border-blue-200' 
+                      : 'text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Users className="w-5 h-5" />
+                  <span className="font-medium">Wholesale</span>
+                </button>
+              </nav>
+            </div>
           </div>
         </div>
+      )}
+
+      {/* Desktop Tab Navigation */}
+      <div className="hidden md:block bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto px-6">
+          <nav className="flex space-x-8">
+            <button 
+              onClick={() => setActiveTab('overview')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'overview'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Overview
+            </button>
+            <button 
+              onClick={() => setActiveTab('communication')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'communication'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Communication Center
+            </button>
+            <button 
+              onClick={() => setActiveTab('orders')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'orders'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Orders
+            </button>
+            <button 
+              onClick={() => setActiveTab('wholesale')}
+              className={`py-4 px-1 border-b-2 font-medium text-sm transition-colors ${
+                activeTab === 'wholesale'
+                  ? 'border-blue-500 text-blue-600'
+                  : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+              }`}
+            >
+              Wholesale
+            </button>
+          </nav>
+        </div>
+      </div>
+
+      {/* Main Content */}
+      <main className="px-6 py-6 max-w-7xl mx-auto">
+        {/* Tab Content */}
+        {activeTab === 'overview' && (
+          <>
+            {/* Welcome Section with Time Filter */}
+            <div className="flex items-center justify-between mb-8">
+              <div>
+                <h2 className="text-3xl font-bold text-gray-900 mb-2">Good morning, Jay! 👋</h2>
+                <p className="text-gray-600">Here's what's happening with your business today</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <select 
+                  value={selectedTimeRange}
+                  onChange={(e) => setSelectedTimeRange(e.target.value)}
+                  className="border border-gray-200 rounded-lg px-4 py-2 text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                >
+                  <option>Today</option>
+                  <option>This Week</option>
+                  <option>This Month</option>
+                  <option>This Quarter</option>
+                </select>
+              </div>
+            </div>
 
         {/* Enhanced Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
@@ -353,6 +501,30 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+          </>
+        )}
+
+        {/* Communication Center Tab */}
+        {activeTab === 'communication' && (
+          <CommunicationCenter />
+        )}
+
+        {/* Other tabs content */}
+        {activeTab === 'orders' && (
+          <div className="text-center py-12">
+            <ShoppingCart className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Orders Management</h3>
+            <p className="text-gray-600">Order management features coming soon</p>
+          </div>
+        )}
+
+        {activeTab === 'wholesale' && (
+          <div className="text-center py-12">
+            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">Wholesale Resources</h3>
+            <p className="text-gray-600">Wholesale management features coming soon</p>
+          </div>
+        )}
       </main>
     </div>
   );
