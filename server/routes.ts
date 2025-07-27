@@ -408,10 +408,11 @@ export async function registerRoutes(app: express.Application) {
 
   // Handle Twilio webhook for incoming voice calls
   app.post("/webhook/voice", (req: Request, res: Response) => {
-    console.log('Incoming call received');
+    console.log('Incoming call received from:', req.body.From);
+    console.log('Call SID:', req.body.CallSid);
 
     res.set('Content-Type', 'text/xml');
-    res.send(`<Response><Say voice="alice">Thank you for calling Jay's Frames! For order updates, please text your order number to this number or visit our website. Have a great day!</Say></Response>`);
+    res.send(`<Response><Say voice="alice">Thank you for calling Jay's Frames! For order updates, please text your order number to this number, or visit our website at jaysframes.com. Have a great day!</Say><Hangup/></Response>`);
   });
 
   return server;

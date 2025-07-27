@@ -1,5 +1,5 @@
 import { pgTable, text, serial, integer, boolean, timestamp, decimal, varchar } from "drizzle-orm/pg-core";
-import { createInsertSchema } from "drizzle-zod";
+import { createInsertSchema, createSelectSchema } from "drizzle-zod";
 import { z } from "zod";
 import { relations } from "drizzle-orm";
 
@@ -144,21 +144,6 @@ export type InsertActivity = z.infer<typeof insertActivitySchema>;
 export type Activity = typeof activities.$inferSelect;
 
 // Order tracking schemas
-export const orders = pgTable('orders', {
-  id: serial('id').primaryKey(),
-  orderNumber: text('order_number').unique().notNull(),
-  customerName: text('customer_name').notNull(),
-  customerPhone: text('customer_phone'),
-  customerEmail: text('customer_email'),
-  frameType: text('frame_type'),
-  dimensions: text('dimensions'),
-  specialInstructions: text('special_instructions'),
-  status: text('status').default('received'),
-  smsEnabled: boolean('sms_enabled').default(true),
-  createdAt: timestamp('created_at').defaultNow(),
-  updatedAt: timestamp('updated_at').defaultNow()
-});
-
 export const statusUpdates = pgTable('status_updates', {
   id: serial('id').primaryKey(),
   orderId: integer('order_id').references(() => orders.id),
@@ -168,7 +153,6 @@ export const statusUpdates = pgTable('status_updates', {
   createdAt: timestamp('created_at').defaultNow()
 });
 
-export const insertOrderSchema = createInsertSchema(orders);
 export const selectOrderSchema = createSelectSchema(orders);
 export const insertStatusUpdateSchema = createInsertSchema(statusUpdates);
 export const selectStatusUpdateSchema = createSelectSchema(statusUpdates);

@@ -57,7 +57,7 @@ export class TwilioService {
       const call = await client.calls.create({
         to: to,
         from: from || twilioPhoneNumber,
-        url: `${process.env.BASE_URL || 'http://localhost:5000'}/api/twilio/voice-response`
+        url: 'https://jays-frames-dashboard-jayframes.replit.app/webhook/voice'
       });
       return call;
     } catch (error) {
@@ -93,11 +93,9 @@ export class TwilioService {
     
     response.say({
       voice: 'alice'
-    }, 'Hello from Jay\'s Frames! Please hold while we connect you.');
+    }, 'Thank you for calling Jay\'s Frames! For order updates, please text your order number to this number, or visit our website. Have a great day!');
     
-    response.dial({
-      callerId: twilioPhoneNumber
-    }, '+1-555-0123'); // Replace with actual business number
+    response.hangup();
     
     return response.toString();
   }
