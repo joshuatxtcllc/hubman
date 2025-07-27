@@ -8,6 +8,8 @@ console.log('Twilio configuration check:');
 console.log('- Account SID:', accountSid ? 'Set' : 'Missing');
 console.log('- Auth Token:', authToken ? 'Set' : 'Missing');
 console.log('- Phone Number:', twilioPhoneNumber ? 'Set' : 'Missing');
+console.log('- API Key:', process.env.TWILIO_API_KEY ? 'Set' : 'Missing');
+console.log('- API Secret:', process.env.TWILIO_API_SECRET ? 'Set' : 'Missing');
 console.log('- TwiML App SID:', process.env.TWILIO_TWIML_APP_SID ? 'Set' : 'Not set (optional)');
 
 if (!accountSid || !authToken || !twilioPhoneNumber) {
@@ -27,12 +29,18 @@ export class TwilioService {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // For demo purposes, we'll create a simple token without API Keys
-    // In production, you should use proper API Key/Secret pairs
+    // Check for required API Key credentials
+    const apiKey = process.env.TWILIO_API_KEY;
+    const apiSecret = process.env.TWILIO_API_SECRET;
+    
+    if (!apiKey || !apiSecret) {
+      throw new Error('TWILIO_API_KEY and TWILIO_API_SECRET are required for JWT generation');
+    }
+
     const accessToken = new AccessToken(
       accountSid!,
-      process.env.TWILIO_API_KEY || accountSid!, // Use API Key if available, fallback to Account SID
-      process.env.TWILIO_API_SECRET || authToken!, // Use API Secret if available, fallback to Auth Token
+      apiKey,
+      apiSecret,
       {
         identity: identity,
         ttl: 3600 // 1 hour
@@ -49,7 +57,7 @@ export class TwilioService {
     
     const token = accessToken.toJwt();
     console.log('Generated access token for identity:', identity);
-    console.log('Using API Key:', process.env.TWILIO_API_KEY ? 'Custom API Key' : 'Account SID');
+    console.log('Using API Key:', apiKey ? `API Key: ${apiKey.substring(0, 8)}...` : 'None');
     return token;
   }
 
