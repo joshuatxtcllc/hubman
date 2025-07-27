@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Phone, PhoneCall, Clock, Users, History, Mic, MicOff } from 'lucide-react';
+import { Phone, PhoneCall, Clock, Users, History, Mic, MicOff, Delete } from 'lucide-react';
 import { Device } from '@twilio/voice-sdk';
 
 const CommunicationCenter = () => {
@@ -249,6 +249,10 @@ const CommunicationCenter = () => {
 
   const clearDialer = () => {
     setPhoneNumber('');
+  };
+
+  const deleteLastDigit = () => {
+    setPhoneNumber(phoneNumber.slice(0, -1));
   };
 
   const makeCall = async (number: string) => {
@@ -528,6 +532,14 @@ const CommunicationCenter = () => {
               >
                 <PhoneCall className="w-5 h-5 mr-2" />
                 Call
+              </button>
+              <button 
+                onClick={deleteLastDigit}
+                disabled={!phoneNumber}
+                className="px-3 bg-red-600 hover:bg-red-700 disabled:bg-gray-400 text-white py-3 rounded-xl transition-colors"
+                title="Delete last digit"
+              >
+                <Delete className="w-4 h-4" />
               </button>
               <button 
                 onClick={clearDialer}
