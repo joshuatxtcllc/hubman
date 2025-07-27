@@ -176,7 +176,7 @@ const Dashboard = () => {
               <span className="text-sm text-gray-600">All Systems Operational</span>
             </div>
           </div>
-          
+
           <div className="flex items-center space-x-4">
             <div className="relative">
               <Search className="w-5 h-5 absolute left-3 top-2.5 text-gray-400" />
@@ -264,7 +264,7 @@ const Dashboard = () => {
                 <span>Real-time status</span>
               </div>
             </div>
-            
+
             <div className="bg-white rounded-xl shadow-sm border border-gray-200/50 p-6">
               <div className="grid grid-cols-4 gap-4">
                 {applications.map((app, index) => (
@@ -290,7 +290,7 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-              
+
               {/* System Overview */}
               <div className="mt-6 pt-4 border-t border-gray-200">
                 <div className="grid grid-cols-4 gap-4 text-center">
@@ -346,7 +346,7 @@ const Dashboard = () => {
                   </div>
                 ))}
               </div>
-              
+
               <button className="w-full mt-4 text-sm text-blue-600 hover:text-blue-700 font-medium hover:bg-blue-50 rounded-lg py-2 transition-colors">
                 View All Activity
               </button>
