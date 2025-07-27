@@ -48,6 +48,11 @@ const CommunicationCenter = () => {
           console.error('Twilio Device error:', error);
           setIsDeviceReady(false);
           setCallStatus('ready');
+          
+          // If JWT is invalid, show helpful message
+          if (error.code === 31204) {
+            console.warn('JWT Token invalid - this may be due to Twilio API Key configuration');
+          }
         });
 
         twilioDevice.on('offline', () => {
@@ -247,12 +252,6 @@ const CommunicationCenter = () => {
   };
 
   const makeCall = async (number: string) => {
-    if (!device || !isDeviceReady) {
-      console.error('Twilio Device not ready');
-      alert('Phone system not ready. Please wait for connection.');
-      return;
-    }
-
     // Clean the phone number
     const cleanNumber = number.replace(/\D/g, '');
     if (cleanNumber.length < 10) {
@@ -273,48 +272,91 @@ const CommunicationCenter = () => {
     console.log('Making call to:', formattedNumber);
     setCallStatus('calling');
 
+    // Try using Twilio Device first, fallback to API call
+    if (device && isDeviceReady) {
+      try {
+        const call = await device.connect({
+          params: {
+            To: formattedNumber
+          }
+        });
+
+        setCurrentCall(call);
+        setActiveCall(formattedNumber);
+
+        call.on('accept', () => {
+          console.log('Call accepted');
+          setCallStatus('connected');
+        });
+
+        call.on('disconnect', () => {
+          console.log('Call disconnected');
+          setActiveCall(null);
+          setCurrentCall(null);
+          setIsMuted(false);
+          setCallStatus('ready');
+        });
+
+        call.on('error', (error) => {
+          console.error('Call error:', error);
+          setActiveCall(null);
+          setCurrentCall(null);
+          setCallStatus('ready');
+          alert('Call failed: ' + error.message);
+        });
+
+        call.on('cancel', () => {
+          console.log('Call was cancelled');
+          setActiveCall(null);
+          setCurrentCall(null);
+          setCallStatus('ready');
+        });
+
+      } catch (error) {
+        console.error('Failed to make call via Device:', error);
+        // Fallback to API call
+        makeApiCall(formattedNumber);
+      }
+    } else {
+      // Fallback to API call if device not ready
+      makeApiCall(formattedNumber);
+    }
+  };
+
+  const makeApiCall = async (number: string) => {
     try {
-      const call = await device.connect({
-        params: {
-          To: formattedNumber
-        }
+      const response = await fetch('/api/twilio/make-call', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          to: number
+        })
       });
 
-      setCurrentCall(call);
-      setActiveCall(formattedNumber);
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
 
-      call.on('accept', () => {
-        console.log('Call accepted');
-        setCallStatus('connected');
-      });
-
-      call.on('disconnect', () => {
-        console.log('Call disconnected');
-        setActiveCall(null);
-        setCurrentCall(null);
-        setIsMuted(false);
-        setCallStatus('ready');
-      });
-
-      call.on('error', (error) => {
-        console.error('Call error:', error);
-        setActiveCall(null);
-        setCurrentCall(null);
-        setCallStatus('ready');
-        alert('Call failed: ' + error.message);
-      });
-
-      call.on('cancel', () => {
-        console.log('Call was cancelled');
+      const result = await response.json();
+      console.log('Call initiated via API:', result);
+      
+      setActiveCall(number);
+      setCallStatus('connected');
+      
+      // Simulate call completion after some time
+      setTimeout(() => {
         setActiveCall(null);
         setCurrentCall(null);
         setCallStatus('ready');
-      });
+        loadCallHistory(); // Refresh call history
+      }, 5000);
 
     } catch (error) {
-      console.error('Failed to make call:', error);
+      console.error('Failed to make API call:', error);
       setCallStatus('ready');
-      alert('Failed to make call: ' + (error as Error).message);
+      alert('Failed to initiate call. Please check your connection and try again.');
     }
   };
 

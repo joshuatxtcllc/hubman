@@ -27,28 +27,29 @@ export class TwilioService {
     const AccessToken = twilio.jwt.AccessToken;
     const VoiceGrant = AccessToken.VoiceGrant;
 
-    // Create access token with proper configuration
+    // For demo purposes, we'll create a simple token without API Keys
+    // In production, you should use proper API Key/Secret pairs
     const accessToken = new AccessToken(
       accountSid!,
-      accountSid!, // Use Account SID as API Key
-      authToken!,  // Use Auth Token as API Secret
+      process.env.TWILIO_API_KEY || accountSid!, // Use API Key if available, fallback to Account SID
+      process.env.TWILIO_API_SECRET || authToken!, // Use API Secret if available, fallback to Auth Token
       {
         identity: identity,
         ttl: 3600 // 1 hour
       }
     );
 
-    // Create voice grant with proper configuration
+    // Create voice grant - simplified for basic calling
     const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID,
-      incomingAllow: true
+      incomingAllow: true,
+      outgoingApplicationSid: process.env.TWILIO_TWIML_APP_SID
     });
 
     accessToken.addGrant(voiceGrant);
     
     const token = accessToken.toJwt();
     console.log('Generated access token for identity:', identity);
-    console.log('Token preview:', token.substring(0, 50) + '...');
+    console.log('Using API Key:', process.env.TWILIO_API_KEY ? 'Custom API Key' : 'Account SID');
     return token;
   }
 
