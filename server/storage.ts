@@ -5,6 +5,7 @@ import {
   applications, 
   businessMetrics, 
   activities,
+  statusUpdates,
   type User, 
   type InsertUser,
   type Customer,
@@ -26,28 +27,28 @@ export interface IStorage {
   getUser(id: number): Promise<User | undefined>;
   getUserByUsername(username: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
-  
+
   // Customer methods
   getCustomers(): Promise<Customer[]>;
   getCustomer(id: number): Promise<Customer | undefined>;
   createCustomer(customer: InsertCustomer): Promise<Customer>;
-  
+
   // Order methods
   getOrders(): Promise<Order[]>;
   getOrder(id: number): Promise<Order | undefined>;
   createOrder(order: InsertOrder): Promise<Order>;
-  
+
   // Application methods
   getApplications(): Promise<Application[]>;
   getApplication(id: number): Promise<Application | undefined>;
   createApplication(application: InsertApplication): Promise<Application>;
   updateApplication(id: number, application: Partial<InsertApplication>): Promise<Application>;
-  
+
   // Business Metrics methods
   getBusinessMetrics(): Promise<BusinessMetric[]>;
   getBusinessMetric(id: number): Promise<BusinessMetric | undefined>;
   createBusinessMetric(metric: InsertBusinessMetric): Promise<BusinessMetric>;
-  
+
   // Activity methods
   getActivities(limit?: number): Promise<Activity[]>;
   createActivity(activity: InsertActivity): Promise<Activity>;
@@ -165,6 +166,52 @@ export class DatabaseStorage implements IStorage {
       .values(insertActivity)
       .returning();
     return activity;
+  }
+
+  // Order tracking methods
+  async getOrders() {
+    return await db.select().from(orders).orderBy(desc(orders.createdAt));
+  }
+
+  async getOrderByNumber(orderNumber: string) {
+    const [order] = await db.select().from(orders).where(eq(orders.orderNumber, orderNumber));
+    return order;
+  }
+
+  async createOrder(order: any) {
+    const [newOrder] = await db.insert(orders).values(order).returning();
+    return newOrder;
+  }
+
+  async updateOrderStatus(orderNumber: string, status: string, notes?: string) {
+    const order = await this.getOrderByNumber(orderNumber);
+    if (!order) throw new Error('Order not found');
+
+    // Update order status
+    const [updatedOrder] = await db
+      .update(orders)
+      .set({ status, updatedAt: new Date() })
+      .where(eq(orders.orderNumber, orderNumber))
+      .returning();
+
+    // Log status change
+    // @ts-expect-error
+    await db.insert(statusUpdates).values({
+      orderId: order.id,
+      oldStatus: order.status,
+      newStatus: status,
+      notes: notes || ''
+    });
+
+    return updatedOrder;
+  }
+
+  async getOrderStatusHistory(orderId: number) {
+    return await db
+      .select()
+      .from(statusUpdates)
+      .where(eq(statusUpdates.orderId, orderId))
+      .orderBy(desc(statusUpdates.createdAt));
   }
 }
 

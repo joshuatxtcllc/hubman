@@ -221,5 +221,198 @@ export async function registerRoutes(app: express.Application) {
     }
   });
 
+  // Order Tracking API Routes
+  const ORDER_STATUSES = {
+    'received': 'Order received and in queue',
+    'measuring': 'Taking measurements and preparing materials',
+    'cutting': 'Cutting frame pieces',
+    'assembly': 'Assembling your custom frame',
+    'quality_check': 'Final quality inspection',
+    'ready': 'Ready for pickup/delivery',
+    'completed': 'Order completed',
+    'cancelled': 'Order cancelled'
+  };
+
+  // SMS sending function for order updates
+  async function sendOrderUpdate(phone: string, orderNumber: string, status: string, notes: string = '') {
+    if (!phone || !process.env.TWILIO_PHONE_NUMBER) {
+      console.log('SMS not sent - missing phone number or Twilio config');
+      return false;
+    }
+
+    try {
+      const message = `🖼️ Jay's Frames Update\n\nOrder #${orderNumber}\nStatus: ${ORDER_STATUSES[status as keyof typeof ORDER_STATUSES]}\n${notes ? '\nNote: ' + notes : ''}\n\nQuestions? Reply to this message!`;
+
+      await TwilioService.makeCall(phone, process.env.TWILIO_PHONE_NUMBER);
+      console.log(`SMS sent to ${phone} for order ${orderNumber}`);
+      return true;
+    } catch (error) {
+      console.error('Error sending SMS:', error);
+      return false;
+    }
+  }
+
+  // Get all orders
+  app.get("/api/orders", async (req: Request, res: Response) => {
+    try {
+      const orders = await storage.getOrders();
+      res.json(orders);
+    } catch (error) {
+      console.error("Error fetching orders:", error);
+      res.status(500).json({ message: "Failed to fetch orders" });
+    }
+  });
+
+  // Get single order by order number
+  app.get("/api/orders/:orderNumber", async (req: Request, res: Response) => {
+    try {
+      const orderNumber = req.params.orderNumber;
+      const order = await storage.getOrderByNumber(orderNumber);
+      
+      if (!order) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+      }
+
+      res.json(order);
+    } catch (error) {
+      console.error("Error fetching order:", error);
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
+  // Create new order
+  app.post("/api/orders", async (req: Request, res: Response) => {
+    try {
+      const {
+        customer_name,
+        customer_phone,
+        customer_email,
+        frame_type,
+        dimensions,
+        special_instructions,
+        sms_enabled
+      } = req.body;
+
+      // Generate order number
+      const orderNumber = 'JF' + Date.now().toString().slice(-6);
+
+      const orderData = {
+        orderNumber,
+        customerName: customer_name,
+        customerPhone: customer_phone,
+        customerEmail: customer_email,
+        frameType: frame_type,
+        dimensions,
+        specialInstructions: special_instructions,
+        status: 'received',
+        smsEnabled: sms_enabled || true
+      };
+
+      const order = await storage.createOrder(orderData);
+
+      // Send confirmation SMS if enabled
+      if (sms_enabled && customer_phone) {
+        await sendOrderUpdate(
+          customer_phone,
+          orderNumber,
+          'received',
+          'We\'ll keep you updated on your custom frame progress!'
+        );
+      }
+
+      res.json({
+        id: order.id,
+        order_number: orderNumber,
+        message: 'Order created successfully'
+      });
+    } catch (error) {
+      console.error("Error creating order:", error);
+      res.status(500).json({ message: "Failed to create order" });
+    }
+  });
+
+  // Update order status
+  app.put("/api/orders/:orderNumber/status", async (req: Request, res: Response) => {
+    try {
+      const orderNumber = req.params.orderNumber;
+      const { status, notes } = req.body;
+
+      if (!ORDER_STATUSES[status as keyof typeof ORDER_STATUSES]) {
+        res.status(400).json({ error: 'Invalid status' });
+        return;
+      }
+
+      const order = await storage.getOrderByNumber(orderNumber);
+      if (!order) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+      }
+
+      const oldStatus = order.status;
+      await storage.updateOrderStatus(orderNumber, status, notes);
+
+      // Send SMS update if enabled
+      if (order.smsEnabled && order.customerPhone) {
+        await sendOrderUpdate(order.customerPhone, orderNumber, status, notes);
+      }
+
+      res.json({
+        message: 'Order status updated successfully',
+        order_number: orderNumber,
+        old_status: oldStatus,
+        new_status: status
+      });
+    } catch (error) {
+      console.error("Error updating order status:", error);
+      res.status(500).json({ message: "Failed to update order status" });
+    }
+  });
+
+  // Customer order lookup (public endpoint)
+  app.get("/api/public/orders/:orderNumber", async (req: Request, res: Response) => {
+    try {
+      const orderNumber = req.params.orderNumber;
+      const order = await storage.getOrderByNumber(orderNumber);
+
+      if (!order) {
+        res.status(404).json({ error: 'Order not found' });
+        return;
+      }
+
+      // Return only public information
+      res.json({
+        order_number: order.orderNumber,
+        customer_name: order.customerName,
+        frame_type: order.frameType,
+        dimensions: order.dimensions,
+        status: order.status,
+        status_description: ORDER_STATUSES[order.status as keyof typeof ORDER_STATUSES],
+        created_at: order.createdAt,
+        updated_at: order.updatedAt
+      });
+    } catch (error) {
+      console.error("Error fetching public order:", error);
+      res.status(500).json({ message: "Failed to fetch order" });
+    }
+  });
+
+  // Handle Twilio webhook for incoming SMS
+  app.post("/webhook/sms", (req: Request, res: Response) => {
+    const { From, Body } = req.body;
+    console.log(`Received SMS from ${From}: ${Body}`);
+
+    res.set('Content-Type', 'text/xml');
+    res.send(`<Response><Message>Thanks for your message! We'll get back to you soon. For immediate assistance, call us directly.</Message></Response>`);
+  });
+
+  // Handle Twilio webhook for incoming voice calls
+  app.post("/webhook/voice", (req: Request, res: Response) => {
+    console.log('Incoming call received');
+
+    res.set('Content-Type', 'text/xml');
+    res.send(`<Response><Say voice="alice">Thank you for calling Jay's Frames! For order updates, please text your order number to this number or visit our website. Have a great day!</Say></Response>`);
+  });
+
   return server;
 }
