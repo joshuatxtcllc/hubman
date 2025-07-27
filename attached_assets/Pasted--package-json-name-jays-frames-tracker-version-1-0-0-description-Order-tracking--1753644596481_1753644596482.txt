@@ -1,0 +1,316 @@
+// package.json
+{
+“name”: “jays-frames-tracker”,
+“version”: “1.0.0”,
+“description”: “Order tracking system for Jay’s Frames”,
+“main”: “server.js”,
+“scripts”: {
+“start”: “node server.js”,
+“dev”: “nodemon server.js”,
+“build”: “npm install”
+},
+“dependencies”: {
+“express”: “^4.18.2”,
+“twilio”: “^4.19.0”,
+“sqlite3”: “^5.1.6”,
+“body-parser”: “^1.20.2”,
+“cors”: “^2.8.5”,
+“dotenv”: “^16.3.1”,
+“helmet”: “^7.1.0”
+},
+“devDependencies”: {
+“nodemon”: “^3.0.2”
+}
+}
+
+// .env (Create this file and add your actual Twilio credentials)
+TWILIO_ACCOUNT_SID=your_twilio_account_sid_here
+TWILIO_AUTH_TOKEN=your_twilio_auth_token_here
+TWILIO_PHONE_NUMBER=+1234567890
+PORT=3000
+
+// server.js
+const express = require(‘express’);
+const bodyParser = require(‘body-parser’);
+const cors = require(‘cors’);
+const helmet = require(‘helmet’);
+const sqlite3 = require(‘sqlite3’).verbose();
+const twilio = require(‘twilio’);
+require(‘dotenv’).config();
+
+const app = express();
+const port = process.env.PORT || 3000;
+
+// Middleware
+app.use(helmet());
+app.use(cors());
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static(‘public’));
+
+// Initialize Twilio
+const twilioClient = twilio(
+process.env.TWILIO_ACCOUNT_SID,
+process.env.TWILIO_AUTH_TOKEN
+);
+
+// Initialize SQLite Database
+const db = new sqlite3.Database(‘orders.db’);
+
+// Create tables if they don’t exist
+db.serialize(() => {
+db.run(`CREATE TABLE IF NOT EXISTS orders ( id INTEGER PRIMARY KEY AUTOINCREMENT, order_number TEXT UNIQUE, customer_name TEXT, customer_phone TEXT, customer_email TEXT, frame_type TEXT, dimensions TEXT, special_instructions TEXT, status TEXT DEFAULT 'received', sms_enabled BOOLEAN DEFAULT 1, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, updated_at DATETIME DEFAULT CURRENT_TIMESTAMP )`);
+
+db.run(`CREATE TABLE IF NOT EXISTS status_updates ( id INTEGER PRIMARY KEY AUTOINCREMENT, order_id INTEGER, old_status TEXT, new_status TEXT, notes TEXT, created_at DATETIME DEFAULT CURRENT_TIMESTAMP, FOREIGN KEY (order_id) REFERENCES orders (id) )`);
+});
+
+// Order status options
+const ORDER_STATUSES = {
+‘received’: ‘Order received and in queue’,
+‘measuring’: ‘Taking measurements and preparing materials’,
+‘cutting’: ‘Cutting frame pieces’,
+‘assembly’: ‘Assembling your custom frame’,
+‘quality_check’: ‘Final quality inspection’,
+‘ready’: ‘Ready for pickup/delivery’,
+‘completed’: ‘Order completed’,
+‘cancelled’: ‘Order cancelled’
+};
+
+// SMS sending function
+async function sendOrderUpdate(phone, orderNumber, status, notes = ‘’) {
+if (!phone || !process.env.TWILIO_PHONE_NUMBER) {
+console.log(‘SMS not sent - missing phone number or Twilio config’);
+return false;
+}
+
+try {
+const message = `🖼️ Jay's Frames Update\n\nOrder #${orderNumber}\nStatus: ${ORDER_STATUSES[status]}\n${notes ? '\nNote: ' + notes : ''}\n\nQuestions? Reply to this message!`;
+
+```
+await twilioClient.messages.create({
+  body: message,
+  from: process.env.TWILIO_PHONE_NUMBER,
+  to: phone
+});
+
+console.log(`SMS sent to ${phone} for order ${orderNumber}`);
+return true;
+```
+
+} catch (error) {
+console.error(‘Error sending SMS:’, error);
+return false;
+}
+}
+
+// API Routes
+
+// Get all orders
+app.get(’/api/orders’, (req, res) => {
+db.all(‘SELECT * FROM orders ORDER BY created_at DESC’, [], (err, rows) => {
+if (err) {
+res.status(500).json({ error: err.message });
+return;
+}
+res.json(rows);
+});
+});
+
+// Get single order
+app.get(’/api/orders/:orderNumber’, (req, res) => {
+const orderNumber = req.params.orderNumber;
+
+db.get(‘SELECT * FROM orders WHERE order_number = ?’, [orderNumber], (err, row) => {
+if (err) {
+res.status(500).json({ error: err.message });
+return;
+}
+if (!row) {
+res.status(404).json({ error: ‘Order not found’ });
+return;
+}
+
+```
+// Get status history
+db.all(
+  'SELECT * FROM status_updates WHERE order_id = ? ORDER BY created_at DESC',
+  [row.id],
+  (err, updates) => {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+    res.json({ ...row, status_history: updates });
+  }
+);
+```
+
+});
+});
+
+// Create new order
+app.post(’/api/orders’, async (req, res) => {
+const {
+customer_name,
+customer_phone,
+customer_email,
+frame_type,
+dimensions,
+special_instructions,
+sms_enabled
+} = req.body;
+
+// Generate order number
+const orderNumber = ‘JF’ + Date.now().toString().slice(-6);
+
+db.run(
+`INSERT INTO orders ( order_number, customer_name, customer_phone, customer_email, frame_type, dimensions, special_instructions, sms_enabled ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+[orderNumber, customer_name, customer_phone, customer_email, frame_type, dimensions, special_instructions, sms_enabled],
+async function(err) {
+if (err) {
+res.status(500).json({ error: err.message });
+return;
+}
+
+```
+  // Send confirmation SMS if enabled
+  if (sms_enabled && customer_phone) {
+    await sendOrderUpdate(
+      customer_phone,
+      orderNumber,
+      'received',
+      'We\'ll keep you updated on your custom frame progress!'
+    );
+  }
+  
+  res.json({
+    id: this.lastID,
+    order_number: orderNumber,
+    message: 'Order created successfully'
+  });
+}
+```
+
+);
+});
+
+// Update order status
+app.put(’/api/orders/:orderNumber/status’, async (req, res) => {
+const orderNumber = req.params.orderNumber;
+const { status, notes } = req.body;
+
+if (!ORDER_STATUSES[status]) {
+res.status(400).json({ error: ‘Invalid status’ });
+return;
+}
+
+// Get current order
+db.get(‘SELECT * FROM orders WHERE order_number = ?’, [orderNumber], async (err, order) => {
+if (err) {
+res.status(500).json({ error: err.message });
+return;
+}
+if (!order) {
+res.status(404).json({ error: ‘Order not found’ });
+return;
+}
+
+```
+const oldStatus = order.status;
+
+// Update order status
+db.run(
+  'UPDATE orders SET status = ?, updated_at = CURRENT_TIMESTAMP WHERE order_number = ?',
+  [status, orderNumber],
+  async function(err) {
+    if (err) {
+      res.status(500).json({ error: err.message });
+      return;
+    }
+
+    // Log status change
+    db.run(
+      'INSERT INTO status_updates (order_id, old_status, new_status, notes) VALUES (?, ?, ?, ?)',
+      [order.id, oldStatus, status, notes || '']
+    );
+
+    // Send SMS update if enabled
+    if (order.sms_enabled && order.customer_phone) {
+      await sendOrderUpdate(order.customer_phone, orderNumber, status, notes);
+    }
+
+    res.json({
+      message: 'Order status updated successfully',
+      order_number: orderNumber,
+      old_status: oldStatus,
+      new_status: status
+    });
+  }
+);
+```
+
+});
+});
+
+// Customer order lookup (public endpoint)
+app.get(’/api/public/orders/:orderNumber’, (req, res) => {
+const orderNumber = req.params.orderNumber;
+
+db.get(
+‘SELECT order_number, customer_name, frame_type, dimensions, status, created_at, updated_at FROM orders WHERE order_number = ?’,
+[orderNumber],
+(err, row) => {
+if (err) {
+res.status(500).json({ error: ‘Database error’ });
+return;
+}
+if (!row) {
+res.status(404).json({ error: ‘Order not found’ });
+return;
+}
+
+```
+  res.json({
+    ...row,
+    status_description: ORDER_STATUSES[row.status]
+  });
+}
+```
+
+);
+});
+
+// Handle Twilio webhook for incoming SMS
+app.post(’/webhook/sms’, (req, res) => {
+const { From, Body } = req.body;
+
+console.log(`Received SMS from ${From}: ${Body}`);
+
+// You can implement auto-responses here
+// For now, just log the message
+
+res.set(‘Content-Type’, ‘text/xml’);
+res.send(`<Response> <Message>Thanks for your message! We'll get back to you soon. For immediate assistance, call us directly.</Message> </Response>`);
+});
+
+// Handle Twilio webhook for incoming voice calls
+app.post(’/webhook/voice’, (req, res) => {
+console.log(‘Incoming call received’);
+
+res.set(‘Content-Type’, ‘text/xml’);
+res.send(`<Response> <Say voice="alice">Thank you for calling Jay's Frames! For order updates, please text your order number to this number or visit our website. Have a great day!</Say> </Response>`);
+});
+
+// Start server
+app.listen(port, () => {
+console.log(`Jay's Frames Order Tracker running on port ${port}`);
+console.log(`Access admin panel at http://localhost:${port}/admin.html`);
+console.log(`Customer tracking at http://localhost:${port}/track.html`);
+});
+
+// Graceful shutdown
+process.on(‘SIGINT’, () => {
+console.log(‘Shutting down gracefully…’);
+db.close();
+process.exit(0);
+});
