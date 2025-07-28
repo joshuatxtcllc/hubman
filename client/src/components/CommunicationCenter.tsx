@@ -34,8 +34,7 @@ const CommunicationCenter = () => {
         }
 
         const twilioDevice = new Device(responseData.token, {
-          logLevel: 1,
-          codecPreferences: ['opus', 'pcmu']
+          logLevel: 1
         });
 
         twilioDevice.on('ready', () => {
@@ -72,8 +71,11 @@ const CommunicationCenter = () => {
           setActiveCall(null);
           setCurrentCall(null);
           setIsMuted(false);
-          loadCallHistory(); // Refresh call history
           setCallStatus('ready');
+          // Refresh call history after disconnect
+          setTimeout(() => {
+            loadCallHistory();
+          }, 1000);
         });
 
         // Register the device
@@ -233,13 +235,24 @@ const CommunicationCenter = () => {
 
   const formatPhoneNumber = (number: string) => {
     const cleaned = ('' + number).replace(/\D/g, '');
-    const match = cleaned.match(/^(\d{1,3})?(\d{3})?(\d{4})$/);
-    if (match) {
-      const intlCode = (match[1] ? `+${match[1]} ` : '');
-      const areaCode = (match[2] ? `(${match[2]}) ` : '');
-      const local = match[3];
-      return intlCode + areaCode + local;
+    
+    // Handle 10-digit US numbers by adding +1 prefix for display
+    if (cleaned.length === 10) {
+      const areaCode = cleaned.slice(0, 3);
+      const exchange = cleaned.slice(3, 6);
+      const lineNumber = cleaned.slice(6, 10);
+      return `+1 (${areaCode}) ${exchange}-${lineNumber}`;
     }
+    
+    // Handle 11-digit numbers starting with 1
+    if (cleaned.length === 11 && cleaned.startsWith('1')) {
+      const areaCode = cleaned.slice(1, 4);
+      const exchange = cleaned.slice(4, 7);
+      const lineNumber = cleaned.slice(7, 11);
+      return `+1 (${areaCode}) ${exchange}-${lineNumber}`;
+    }
+    
+    // For other numbers, show as-is
     return number;
   };
 
@@ -354,7 +367,7 @@ const CommunicationCenter = () => {
         setActiveCall(null);
         setCurrentCall(null);
         setCallStatus('ready');
-        loadCallHistory(); // Refresh call history
+        // Refresh call history after delay
       }, 5000);
 
     } catch (error) {
