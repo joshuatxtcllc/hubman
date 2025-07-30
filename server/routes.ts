@@ -4,6 +4,7 @@ import { insertBusinessMetricSchema, insertApplicationSchema, insertActivitySche
 import { getAllApplicationStatuses } from "./status";
 import { createServer } from "http";
 import { TwilioService } from "./twilio-service";
+import { StripeService } from "./stripe-service";
 
 export async function registerRoutes(app: express.Application) {
   const server = createServer(app);
@@ -429,6 +430,87 @@ export async function registerRoutes(app: express.Application) {
 
     res.set('Content-Type', 'text/xml');
     res.send(`<Response><Say voice="alice">Thank you for calling Jay's Frames! For order updates, please text your order number to this number, or visit our website at jaysframes.com. Have a great day!</Say><Hangup/></Response>`);
+  });
+
+  // Stripe payment routes
+  app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
+    try {
+      const { amount, orderId, customerEmail } = req.body;
+
+      if (!process.env.STRIPE_SECRET_KEY) {
+        return res.status(500).json({
+          error: 'Stripe not configured',
+          message: 'STRIPE_SECRET_KEY environment variable is not set.'
+        });
+      }
+
+      const session = await StripeService.createCheckoutSession({
+        amount,
+        currency: 'usd',
+        customerEmail,
+        orderId,
+        successUrl: `${req.protocol}://${req.get('host')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
+        cancelUrl: `${req.protocol}://${req.get('host')}/payment-cancelled`
+      });
+
+      res.json({
+        sessionId: session.id,
+        url: session.url,
+        success: true
+      });
+    } catch (error) {
+      console.error("Error creating Stripe checkout:", error);
+      res.status(500).json({
+        error: 'Failed to create checkout session',
+        message: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+  });
+
+  app.get("/api/stripe/session/:sessionId", async (req: Request, res: Response) => {
+    try {
+      const session = await StripeService.retrieveSession(req.params.sessionId);
+      res.json(session);
+    } catch (error) {
+      console.error("Error retrieving Stripe session:", error);
+      res.status(500).json({ message: "Failed to retrieve session" });
+    }
+  });
+
+  app.get("/api/stripe/payment-history", async (req: Request, res: Response) => {
+    try {
+      const history = await StripeService.getPaymentHistory();
+      res.json(history);
+    } catch (error) {
+      console.error("Error fetching payment history:", error);
+      res.status(500).json({ message: "Failed to fetch payment history" });
+    }
+  });
+
+  // Stripe webhook handler
+  app.post("/webhook/stripe", express.raw({type: 'application/json'}), (req: Request, res: Response) => {
+    const sig = req.headers['stripe-signature'];
+    let event;
+
+    try {
+      event = stripe.webhooks.constructEvent(req.body, sig!, process.env.STRIPE_WEBHOOK_SECRET!);
+    } catch (err) {
+      console.log(`Webhook signature verification failed.`, err);
+      return res.status(400).send(`Webhook Error: ${err}`);
+    }
+
+    // Handle the checkout.session.completed event
+    if (event.type === 'checkout.session.completed') {
+      const session = event.data.object;
+      console.log('Payment succeeded for order:', session.metadata?.orderId);
+      
+      // Update order status to paid
+      if (session.metadata?.orderId) {
+        storage.updateOrderStatus(session.metadata.orderId, 'paid', 'Payment received via Stripe');
+      }
+    }
+
+    res.json({received: true});
   });
 
   return server;

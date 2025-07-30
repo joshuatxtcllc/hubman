@@ -92,14 +92,14 @@ const WorkflowEnhancement = () => {
     {
       id: 3,
       title: "Process Payment", 
-      description: "Send payment link or process payment",
+      description: "Create Stripe checkout session",
       icon: <CreditCard className="w-5 h-5" />,
-      appName: "Stripe Payment",
-      url: "https://dashboard.stripe.com",
-      action: "Generate payment link and send to customer",
-      dataNeeded: ["Invoice total", "Customer email"],
-      dataProvided: ["Payment confirmation", "Receipt"],
-      estimatedTime: "2 min"
+      appName: "Stripe Checkout",
+      url: "#stripe-payment",
+      action: "Create secure checkout session for customer payment",
+      dataNeeded: ["Invoice total", "Customer email", "Order ID"],
+      dataProvided: ["Payment link", "Session ID", "Payment status"],
+      estimatedTime: "1 min"
     },
     {
       id: 4,

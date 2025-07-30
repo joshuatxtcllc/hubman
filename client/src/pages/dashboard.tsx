@@ -24,6 +24,34 @@ const Dashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
+  const handleStripeCheckout = async (amount: number, orderId: string, customerEmail?: string) => {
+    try {
+      const response = await fetch('/api/stripe/create-checkout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          amount,
+          orderId,
+          customerEmail
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success && data.url) {
+        window.location.href = data.url;
+      } else {
+        console.error('Failed to create checkout session:', data.error);
+        alert('Failed to create payment session. Please try again.');
+      }
+    } catch (error) {
+      console.error('Error creating checkout session:', error);
+      alert('Payment system temporarily unavailable. Please try again.');
+    }
+  };
+
   
 
   const applications = [
@@ -114,6 +142,17 @@ const Dashboard = () => {
       gradient: "from-red-500 to-red-600",
       priority: "medium",
       url: "#"
+    },
+    {
+      title: "Stripe Checkout",
+      subtitle: "Payment Processing",
+      status: "Online",
+      users: 24,
+      uptime: "99.8%",
+      icon: "💳",
+      gradient: "from-indigo-500 to-purple-600",
+      priority: "high",
+      url: "#stripe-checkout"
     }
   ];
 
@@ -340,7 +379,14 @@ const Dashboard = () => {
             <div className="bg-white rounded-xl shadow-sm border border-gray-200/50 p-6">
               <div className="grid grid-cols-4 gap-4">
                 {applications.map((app, index) => (
-                  <div key={index} className="group cursor-pointer" onClick={() => app.url !== '#' && window.open(app.url, '_blank')}>
+                  <div key={index} className="group cursor-pointer" onClick={() => {
+                    if (app.url === '#stripe-checkout') {
+                      // Demo checkout - in real app, you'd get these values from form/context
+                      handleStripeCheckout(150, 'DEMO-001', 'customer@example.com');
+                    } else if (app.url !== '#') {
+                      window.open(app.url, '_blank');
+                    }
+                  }}>
                     <div className="flex flex-col items-center">
                       <div className={`relative w-16 h-16 bg-gradient-to-r ${app.gradient} rounded-2xl flex items-center justify-center text-2xl text-white shadow-lg group-hover:shadow-xl transition-all duration-300 transform group-hover:scale-110 mb-3`}>
                         {app.icon}
