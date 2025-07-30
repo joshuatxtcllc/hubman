@@ -8,7 +8,6 @@ import {
   Bell,
   Search,
   ChevronDown,
-  TrendingUp,
   Activity,
   Clock,
   Zap,
@@ -25,49 +24,7 @@ const Dashboard = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const isMobile = useIsMobile();
 
-  // Enhanced metrics with trends
-  const metrics = [
-    {
-      title: "Monthly Revenue",
-      value: "$24,580",
-      change: "+12%",
-      trend: "up",
-      icon: DollarSign,
-      gradient: "from-blue-500 to-blue-600",
-      comparison: "vs last month",
-      target: "$25,000"
-    },
-    {
-      title: "Active Orders",
-      value: "347",
-      change: "+8%",
-      trend: "up",
-      icon: ShoppingCart,
-      gradient: "from-green-500 to-green-600",
-      comparison: "vs last week",
-      target: "350"
-    },
-    {
-      title: "Pending Tasks",
-      value: "24",
-      change: "-12",
-      trend: "down",
-      icon: CheckSquare,
-      gradient: "from-purple-500 to-purple-600",
-      comparison: "from yesterday",
-      target: "< 20"
-    },
-    {
-      title: "Total Customers",
-      value: "1,248",
-      change: "+24%",
-      trend: "up",
-      icon: Users,
-      gradient: "from-orange-500 to-orange-600",
-      comparison: "vs last quarter",
-      target: "1,300"
-    }
-  ];
+  
 
   const applications = [
     {
@@ -367,40 +324,7 @@ const Dashboard = () => {
               </div>
             </div>
 
-        {/* Enhanced Metrics Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-          {metrics.map((metric, index) => {
-            const Icon = metric.icon;
-            return (
-              <div key={index} className="bg-white rounded-xl shadow-sm border border-gray-200/50 p-6 hover:shadow-md transition-all duration-300 group">
-                <div className="flex items-center justify-between mb-4">
-                  <div className={`p-3 rounded-xl bg-gradient-to-r ${metric.gradient} shadow-lg`}>
-                    <Icon className="w-6 h-6 text-white" />
-                  </div>
-                  <div className="text-right">
-                    <div className={`flex items-center text-sm font-semibold ${
-                      metric.trend === 'up' ? 'text-green-600' : 'text-red-600'
-                    }`}>
-                      <TrendingUp className={`w-4 h-4 mr-1 ${metric.trend === 'down' ? 'rotate-180' : ''}`} />
-                      {metric.change}
-                    </div>
-                    <p className="text-xs text-gray-500">{metric.comparison}</p>
-                  </div>
-                </div>
-                <div>
-                  <p className="text-3xl font-bold text-gray-900 mb-1">{metric.value}</p>
-                  <p className="text-sm text-gray-600 mb-2">{metric.title}</p>
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs text-gray-500">Target: {metric.target}</span>
-                    <div className="w-16 h-1 bg-gray-200 rounded-full">
-                      <div className="w-3/4 h-1 bg-gradient-to-r from-green-400 to-green-500 rounded-full"></div>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Enhanced Applications Grid */}
