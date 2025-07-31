@@ -68,14 +68,14 @@ const WorkflowEnhancement = () => {
     {
       id: 1,
       title: "Calculate Pricing",
-      description: "Use POS System to calculate frame pricing",
+      description: "Use Frame Calculator to calculate order pricing",
       icon: <Calculator className="w-5 h-5" />,
-      appName: "POS System",
-      url: "https://frame-craft-pro-JayFrames.replit.app",
-      action: "Calculate order pricing and get customer details",
-      dataNeeded: ["Customer info", "Frame dimensions", "Materials"],
-      dataProvided: ["Total price", "Materials list", "Customer data"],
-      estimatedTime: "5 min"
+      appName: "Frame Calculator",
+      url: "https://docs.google.com/spreadsheets/d/10DDLzMGD3WbKoTJ-HdnopyVdXgQ0Q6Pu8LO_UlkTr5s/edit?gid=543232677#gid=543232677&range=1:2",
+      action: "Calculate frame pricing using the professional spreadsheet calculator",
+      dataNeeded: ["Frame dimensions", "Moulding type", "Glass type", "Mat options"],
+      dataProvided: ["Total price", "Cost breakdown", "Profit margins"],
+      estimatedTime: "3 min"
     },
     {
       id: 2, 
@@ -367,6 +367,11 @@ This email was sent from the Jay's Frames Command Center`;
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <h4 className="font-medium text-blue-900 mb-2">Action Required:</h4>
                   <p className="text-sm text-blue-700">{getCurrentStep()?.action}</p>
+                  {getCurrentStep()?.id === 1 && (
+                    <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
+                      <strong>Calculator Tips:</strong> Enter frame width/height → Select moulding type → Choose glass/mat options → Copy total price for invoice
+                    </div>
+                  )}
                   {getCurrentStep()?.id === 5 && (
                     <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
                       <strong>Mac Tip:</strong> After downloading PDF, drag directly to the opened Drive folder to avoid local saving step.
@@ -374,7 +379,7 @@ This email was sent from the Jay's Frames Command Center`;
                   )}
                   {getCurrentStep()?.id === 6 && (
                     <div className="mt-2 p-2 bg-blue-100 rounded text-xs text-blue-800">
-                      <strong>Kanban Tips:</strong> Click "New Card" → Add customer name in title → Copy frame specs from POS to description
+                      <strong>Kanban Tips:</strong> Click "New Card" → Add customer name in title → Copy frame specs from calculator to description
                     </div>
                   )}
                   {getCurrentStep()?.id === 7 && (
@@ -503,18 +508,18 @@ This email was sent from the Jay's Frames Command Center`;
           </div>
           
           <div className="bg-white rounded-xl p-4 border border-purple-100">
-            <h4 className="font-medium text-purple-900 mb-2">🎯 Professional Design</h4>
-            <p className="text-sm text-purple-700 mb-2">Larson Juhl Designer Tool:</p>
+            <h4 className="font-medium text-purple-900 mb-2">🧮 Frame Calculator</h4>
+            <p className="text-sm text-purple-700 mb-2">Professional pricing calculator:</p>
             <a 
-              href="https://shop.larsonjuhl.com/en-US/lj-design-studio?customizable=#maincontent" 
+              href="https://docs.google.com/spreadsheets/d/10DDLzMGD3WbKoTJ-HdnopyVdXgQ0Q6Pu8LO_UlkTr5s/edit?gid=543232677#gid=543232677&range=1:2" 
               target="_blank" 
               rel="noopener noreferrer"
               className="text-xs text-blue-600 hover:text-blue-800 underline"
             >
-              Open Professional Frame Designer
+              Open Frame Order Calculator
             </a>
             <p className="text-xs text-purple-600 mt-2">
-              <strong>Use for:</strong> Advanced frame designs, premium materials, professional mockups and customer presentations.
+              <strong>Features:</strong> Automatic pricing calculations, material costs, profit margins, and professional quotes with detailed breakdowns.
             </p>
           </div>
         </div>

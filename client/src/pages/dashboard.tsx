@@ -153,6 +153,17 @@ const Dashboard = () => {
       gradient: "from-indigo-500 to-purple-600",
       priority: "high",
       url: "#stripe-checkout"
+    },
+    {
+      title: "Frame Calculator",
+      subtitle: "Order Pricing Tool",
+      status: "Online",
+      users: 18,
+      uptime: "100%",
+      icon: "🧮",
+      gradient: "from-emerald-500 to-teal-600",
+      priority: "high",
+      url: "https://docs.google.com/spreadsheets/d/10DDLzMGD3WbKoTJ-HdnopyVdXgQ0Q6Pu8LO_UlkTr5s/edit?gid=543232677#gid=543232677&range=1:2"
     }
   ];
 
