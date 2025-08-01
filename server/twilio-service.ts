@@ -66,7 +66,7 @@ export class TwilioService {
     try {
       const call = await client.calls.create({
         to: to,
-        from: from || twilioPhoneNumber,
+        from: from || twilioPhoneNumber!,
         url: 'https://jays-frames-dashboard-jayframes.replit.app/webhook/voice'
       });
       return call;
