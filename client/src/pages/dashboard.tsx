@@ -26,25 +26,29 @@ const Dashboard = () => {
 
   const handleStripeCheckout = async (amount: number, orderId: string, customerEmail?: string) => {
     try {
+      console.log('Dashboard initiating Stripe checkout:', { amount, orderId, customerEmail });
+      
       const response = await fetch('/api/stripe/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount,
+          amount: parseFloat(amount.toString()) || 0,
           orderId,
-          customerEmail
+          customerEmail,
+          description: `Jay's Frames Order #${orderId}`
         }),
       });
 
       const data = await response.json();
+      console.log('Stripe checkout response:', data);
 
       if (data.success && data.url) {
         window.location.href = data.url;
       } else {
         console.error('Failed to create checkout session:', data.error);
-        alert('Failed to create payment session. Please try again.');
+        alert(`Failed to create payment session: ${data.error || 'Please try again.'}`);
       }
     } catch (error) {
       console.error('Error creating checkout session:', error);

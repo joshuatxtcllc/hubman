@@ -11,10 +11,13 @@ export class StripeService {
     currency: string;
     customerEmail?: string;
     orderId: string;
+    description?: string;
     successUrl: string;
     cancelUrl: string;
   }) {
     try {
+      console.log('Creating Stripe session with amount:', orderData.amount, 'cents:', Math.round(orderData.amount * 100));
+      
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
         line_items: [
@@ -23,9 +26,9 @@ export class StripeService {
               currency: orderData.currency,
               product_data: {
                 name: `Custom Frame Order #${orderData.orderId}`,
-                description: 'Professional custom framing service',
+                description: orderData.description || 'Professional custom framing service',
               },
-              unit_amount: orderData.amount * 100, // Convert to cents
+              unit_amount: Math.round(orderData.amount * 100), // Convert to cents and round
             },
             quantity: 1,
           },
@@ -36,6 +39,7 @@ export class StripeService {
         customer_email: orderData.customerEmail,
         metadata: {
           orderId: orderData.orderId,
+          originalAmount: orderData.amount.toString(),
         },
       });
 

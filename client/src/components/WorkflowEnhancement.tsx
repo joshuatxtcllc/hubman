@@ -181,9 +181,9 @@ const WorkflowEnhancement = () => {
   const startNewWorkflow = (templateId = 'standard') => {
     const template = workflowTemplates.find(t => t.id === templateId);
     if (!template) return;
-    
+
     const workflowId = `WF-${Date.now()}`;
-    
+
     setActiveWorkflow(workflowId);
     setCurrentStep(0);
     setOrderData({
@@ -203,7 +203,7 @@ const WorkflowEnhancement = () => {
         data: data
       }
     }));
-    
+
     // Move to next step
     const currentSteps = orderData.steps || workflowSteps;
     const nextStepIndex = currentSteps.findIndex(s => s.id === stepId);
@@ -221,7 +221,7 @@ const WorkflowEnhancement = () => {
       completedAt: new Date().toISOString(),
       status: 'completed'
     }]);
-    
+
     setActiveWorkflow(null);
     setCurrentStep(0);
     setOrderData({});
@@ -250,14 +250,14 @@ Jay's Frames Team
 
 ---
 This email was sent from the Jay's Frames Command Center`;
-        
+
         const mailtoLink = `mailto:${customerEmail}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
         window.open(mailtoLink);
       }
     } else {
       window.open(url, '_blank');
     }
-    
+
     // Mark step as active but don't auto-complete
     const currentSteps = orderData.steps || workflowSteps;
     const stepIndex = currentSteps.findIndex(s => s.id === stepId);
@@ -266,7 +266,51 @@ This email was sent from the Jay's Frames Command Center`;
 
   const getCurrentStep = () => {
     const currentSteps = orderData.steps || workflowSteps;
-    return currentSteps[currentStep] || currentSteps[0];
+
+    switch (getCurrentStep()?.id) {
+      case 3: // Process Payment
+        if (orderData.total && orderData.customerEmail) {
+          // Create Stripe checkout session with order amount
+          try {
+            console.log('Creating Stripe checkout with amount:', orderData.total);
+            const response = fetch('/api/stripe/create-checkout', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                amount: parseFloat(orderData.total) || 0,
+                orderId: orderData.id || `JF-${Date.now()}`,
+                customerEmail: orderData.customerEmail,
+                description: `Custom Frame Order - ${orderData.dimensions || 'Custom Size'}`
+              }),
+            });
+
+            response.then(res => res.json()).then(data => {
+              console.log('Stripe response:', data);
+
+              if (data.success && data.url) {
+                window.open(data.url, '_blank');
+              } else {
+                console.error('Failed to create checkout session:', data);
+                alert(`Failed to create payment session: ${data.error || 'Unknown error'}`);
+              }
+            }).catch(error => {
+              console.error('Error creating checkout session:', error);
+              alert('Payment system temporarily unavailable. Please try again.');
+            })
+
+          } catch (error) {
+            console.error('Error creating checkout session:', error);
+            alert('Payment system temporarily unavailable. Please try again.');
+          }
+        } else {
+          alert(`Please ensure order total ($${orderData.total || 'not set'}) and customer email (${orderData.customerEmail || 'not set'}) are set before processing payment.`);
+        }
+        break;
+      default:
+        return currentSteps[currentStep] || currentSteps[0];
+    }
   };
 
   return (
@@ -330,7 +374,7 @@ This email was sent from the Jay's Frames Command Center`;
           <div className="text-sm text-gray-600">
             Step {currentStep + 1} of {(orderData.steps || workflowSteps).length}: {getCurrentStep()?.title}
           </div>
-          
+
           {/* Progress Bar */}
           <div className="mt-4">
             <div className="bg-gray-200 rounded-full h-2">
@@ -362,7 +406,7 @@ This email was sent from the Jay's Frames Command Center`;
                   <p className="text-gray-600">{getCurrentStep()?.description}</p>
                 </div>
               </div>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
                 <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
                   <h4 className="font-medium text-blue-900 mb-2">Action Required:</h4>
@@ -407,7 +451,7 @@ This email was sent from the Jay's Frames Command Center`;
               </div>
             </div>
           </div>
-          
+
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2 text-sm text-gray-500">
               <Clock className="w-4 h-4" />
@@ -479,7 +523,7 @@ This email was sent from the Jay's Frames Command Center`;
               <strong>Mac Tip:</strong> Keep this folder open in a browser tab during workflow for direct drag-and-drop.
             </p>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">📋 Kanban Integration</h4>
             <p className="text-sm text-purple-700 mb-2">Production tracking steps:</p>
@@ -491,7 +535,7 @@ This email was sent from the Jay's Frames Command Center`;
               <li>5. Set due date and priority</li>
             </ol>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">📧 Email Automation</h4>
             <p className="text-sm text-purple-700 mb-2">Auto-generated email includes:</p>
@@ -506,7 +550,7 @@ This email was sent from the Jay's Frames Command Center`;
               <strong>Note:</strong> You'll need to manually attach the invoice PDF from your downloads.
             </p>
           </div>
-          
+
           <div className="bg-white rounded-xl p-4 border border-purple-100">
             <h4 className="font-medium text-purple-900 mb-2">🧮 Frame Calculator</h4>
             <p className="text-sm text-purple-700 mb-2">Professional pricing calculator:</p>

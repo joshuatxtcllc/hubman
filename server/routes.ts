@@ -435,7 +435,9 @@ export async function registerRoutes(app: express.Application) {
   // Stripe payment routes
   app.post("/api/stripe/create-checkout", async (req: Request, res: Response) => {
     try {
-      const { amount, orderId, customerEmail } = req.body;
+      const { amount, orderId, customerEmail, description } = req.body;
+
+      console.log('Stripe checkout request:', { amount, orderId, customerEmail, description });
 
       if (!process.env.STRIPE_SECRET_KEY) {
         return res.status(500).json({
@@ -444,19 +446,37 @@ export async function registerRoutes(app: express.Application) {
         });
       }
 
+      if (!amount || amount <= 0) {
+        return res.status(400).json({
+          error: 'Invalid amount',
+          message: 'Amount must be greater than 0'
+        });
+      }
+
+      if (!orderId) {
+        return res.status(400).json({
+          error: 'Missing order ID',
+          message: 'Order ID is required'
+        });
+      }
+
       const session = await StripeService.createCheckoutSession({
-        amount,
+        amount: parseFloat(amount),
         currency: 'usd',
         customerEmail,
         orderId,
+        description: description || `Custom Frame Order #${orderId}`,
         successUrl: `${req.protocol}://${req.get('host')}/payment-success?session_id={CHECKOUT_SESSION_ID}`,
         cancelUrl: `${req.protocol}://${req.get('host')}/payment-cancelled`
       });
 
+      console.log('Stripe session created:', { sessionId: session.id, amount: parseFloat(amount) });
+
       res.json({
         sessionId: session.id,
         url: session.url,
-        success: true
+        success: true,
+        amount: parseFloat(amount)
       });
     } catch (error) {
       console.error("Error creating Stripe checkout:", error);
